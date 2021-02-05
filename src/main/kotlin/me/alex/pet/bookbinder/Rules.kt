@@ -24,13 +24,19 @@ data class Rule(
 data class StyledString(
     val string: String,
     val styles: List<Style> = emptyList(),
-    val indents: List<Indent> = emptyList(),
-    val links: List<Link> = emptyList()
+    val links: List<Link> = emptyList(),
+    val indents: List<Indent> = emptyList()
 )
 
 fun String.toStyledString(): StyledString = StyledString(this)
 
-data class Style(val start: Int, val end: Int, val styleType: StyleType)
+data class Style(val start: Int, val end: Int, val styleType: StyleType) {
+    companion object {
+        fun emphasis(start: Int, end: Int) = Style(start, end, StyleType.EMPHASIS)
+        fun strongEmphasis(start: Int, end: Int) = Style(start, end, StyleType.STRONG_EMPHASIS)
+        fun misspell(start: Int, end: Int) = Style(start, end, StyleType.MISSPELL)
+    }
+}
 
 enum class StyleType {
     EMPHASIS,

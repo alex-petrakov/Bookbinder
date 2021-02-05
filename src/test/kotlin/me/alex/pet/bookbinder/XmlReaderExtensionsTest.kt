@@ -112,4 +112,65 @@ class XmlReaderExtensionsTest {
             reader.parseLink()
         }
     }
+
+    @ParameterizedTest
+    @ValueSource(strings = [" ", "\n", "Text", "Te xt\nText\n"])
+    fun `handles plain text`(plainText: String) {
+        val input = "<test>$plainText</test>".byteInputStream()
+        val reader = factory.createXMLEventReader(input).apply {
+            nextEvent() // Skip the START_DOCUMENT event
+            nextEvent() // Skip the <test> tag
+        }
+
+        val output = reader.parseStyledText()
+
+        assertThat(output).isEqualTo(StyledString(plainText))
+    }
+
+    @Test
+    fun `handles styled text`() {
+        val input = "<test><e>01</e>23<s>45</s>67<m>89</m>01<l rule=\"1\">23</l></test>".byteInputStream()
+        val reader = factory.createXMLEventReader(input).apply {
+            nextEvent() // Skip the START_DOCUMENT event
+            nextEvent() // Skip the <test> tag
+        }
+
+        val output = reader.parseStyledText()
+
+        val styles = listOf(
+            Style.emphasis(0, 2),
+            Style.strongEmphasis(4, 6),
+            Style.misspell(8, 10),
+        )
+        val links = listOf(
+            Link(12, 14, 1)
+        )
+        assertThat(output).isEqualTo(StyledString("01234567890123", styles, links))
+    }
+
+    @Test
+    fun `does not allow empty text`() {
+        val input = "<test></test>".byteInputStream()
+        val reader = factory.createXMLEventReader(input).apply {
+            nextEvent() // Skip the START_DOCUMENT event
+            nextEvent() // Skip the <test> tag
+        }
+
+        assertThrows<RuntimeException> {
+            reader.parseStyledText()
+        }
+    }
+
+    @Test
+    fun `does not allow nested style tags`() {
+        val input = "<test><e><m>Text</m></e></test>".byteInputStream()
+        val reader = factory.createXMLEventReader(input).apply {
+            nextEvent() // Skip the START_DOCUMENT event
+            nextEvent() // Skip the <test> tag
+        }
+
+        assertThrows<RuntimeException> {
+            reader.parseStyledText()
+        }
+    }
 }

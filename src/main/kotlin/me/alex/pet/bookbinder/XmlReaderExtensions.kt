@@ -4,6 +4,7 @@ import javax.xml.stream.XMLEventReader
 import javax.xml.stream.events.Attribute
 import javax.xml.stream.events.EndElement
 import javax.xml.stream.events.StartElement
+import javax.xml.stream.events.XMLEvent
 
 private const val ATTR_RULE = "rule"
 private const val ELEMENT_EMPHASIS = "e"
@@ -17,6 +18,42 @@ private val tagsToStyles = mapOf(
     ELEMENT_MISSPELL to StyleType.MISSPELL
 )
 
+val styleTags = setOf(
+    ELEMENT_EMPHASIS,
+    ELEMENT_STRONG_EMPHASIS,
+    ELEMENT_MISSPELL
+)
+
+
+fun XMLEventReader.parseStyledText(): StyledString {
+    val textBuffer = StringBuilder()
+    val styles = mutableListOf<Style>()
+    val links = mutableListOf<Link>()
+    do {
+        val element = peek()
+        when {
+            element.isStyleStart -> {
+                val (str, style) = parseStyledSubstring()
+                styles.add(Style(textBuffer.length, textBuffer.length + str.length, style))
+                textBuffer.append(str)
+            }
+            element.isLinkStart -> {
+                val (str, ruleId) = parseLink()
+                links.add(Link(textBuffer.length, textBuffer.length + str.length, ruleId))
+                textBuffer.append(str)
+            }
+            element.isCharacters -> textBuffer.append(readText())
+            else -> throw RuntimeException()
+        }
+    } while (!peek().isEndElement)
+    return StyledString(textBuffer.toString(), styles = styles, links = links)
+}
+
+private val XMLEvent.isStyleStart: Boolean
+    get() = isStartElement && asStartElement().localName in styleTags
+
+private val XMLEvent.isLinkStart: Boolean
+    get() = isStartElement && asStartElement().localName == ELEMENT_LINK
 
 fun XMLEventReader.parseLink(): Pair<String, Int> {
     val element = consumeStartElement(ELEMENT_LINK)
