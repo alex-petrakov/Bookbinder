@@ -23,12 +23,10 @@ data class Rule(
 
 data class StyledString(
     val string: String,
-    val styles: List<Style>,
-    val indents: List<Indent>,
-    val links: List<Link>
-) {
-    constructor(string: String) : this(string, emptyList(), emptyList(), emptyList())
-}
+    val styles: List<Style> = emptyList(),
+    val indents: List<Indent> = emptyList(),
+    val links: List<Link> = emptyList()
+)
 
 fun String.toStyledString(): StyledString = StyledString(this)
 
