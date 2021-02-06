@@ -80,44 +80,58 @@ class XmlReaderExtensionsTest {
 
             @ParameterizedTest
             @ValueSource(strings = ["\n", " ", "Emphasized text", " Emphasized text "])
-            fun `handles links`(emphasizedText: String) {
-                val input = "<l rule=\"1\">$emphasizedText</l>".byteInputStream()
+            fun `handles link content`(content: String) {
+                val input = "<l rule=\"1\">$content</l>".byteInputStream()
                 val reader = factory.createXMLEventReader(input).apply {
                     nextEvent() // Skip the START_DOCUMENT event
                 }
 
                 val output = reader.parseLink()
 
-                assertThat(output).isEqualTo(emphasizedText to 1)
+                assertThat(output).isEqualTo(content to 1)
             }
 
             @Test
-            fun `does not allow links to nowhere`() {
-                val input = "<l>Emphasized text</l>".byteInputStream()
-                val reader = factory.createXMLEventReader(input).apply {
-                    nextEvent() // Skip the START_DOCUMENT event
-                }
-
-                assertThrows<RuntimeException> {
-                    reader.parseLink()
-                }
-            }
-
-            @Test
-            fun `does not allow links with a string value`() {
-                val input = "<l rule=\"str\">Emphasized text</l>".byteInputStream()
-                val reader = factory.createXMLEventReader(input).apply {
-                    nextEvent() // Skip the START_DOCUMENT event
-                }
-
-                assertThrows<RuntimeException> {
-                    reader.parseLink()
-                }
-            }
-
-            @Test
-            fun `does not allow empty links`() {
+            fun `does not allow empty content`() {
                 val input = "<l rule=\"1\"></l>".byteInputStream()
+                val reader = factory.createXMLEventReader(input).apply {
+                    nextEvent() // Skip the START_DOCUMENT event
+                }
+
+                assertThrows<RuntimeException> {
+                    reader.parseLink()
+                }
+            }
+
+            @ParameterizedTest
+            @ValueSource(ints = [1, 2, 3, 5, 10, 100])
+            fun `handles correct link destinations`(ruleId: Int) {
+                val input = "<l rule=\"$ruleId\">Content</l>".byteInputStream()
+                val reader = factory.createXMLEventReader(input).apply {
+                    nextEvent() // Skip the START_DOCUMENT event
+                }
+
+                val output = reader.parseLink()
+
+                assertThat(output).isEqualTo("Content" to ruleId)
+            }
+
+            @Test
+            fun `does not allow links without a rule attribute`() {
+                val input = "<l>Content</l>".byteInputStream()
+                val reader = factory.createXMLEventReader(input).apply {
+                    nextEvent() // Skip the START_DOCUMENT event
+                }
+
+                assertThrows<RuntimeException> {
+                    reader.parseLink()
+                }
+            }
+
+            @ParameterizedTest
+            @ValueSource(strings = ["", "str", "10.1", "0", "-1"])
+            fun `does not allow links that point to something other than a rule id`(ruleId: String) {
+                val input = "<l rule=\"$ruleId\">Content</l>".byteInputStream()
                 val reader = factory.createXMLEventReader(input).apply {
                     nextEvent() // Skip the START_DOCUMENT event
                 }
