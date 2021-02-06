@@ -304,4 +304,49 @@ class XmlReaderExtensionsTest {
             }
         }
     }
+
+    @Nested
+    @DisplayName("when parsing rules")
+    inner class RuleParserTest {
+
+        @Test
+        fun `handles rules`() {
+            val input = """
+                <rule>
+                    <p>Paragraph 1</p>
+                    <p>Paragraph 2</p>
+                    <p>Paragraph 3</p>
+                </rule>
+            """.trimIndent().byteInputStream()
+            val reader = factory.createXMLEventReader(input).apply {
+                nextEvent() // Skip the START_DOCUMENT event
+            }
+
+            val output = reader.parseRule()
+
+            assertThat(output).isEqualTo(
+                Rule(
+                    listOf(
+                        Paragraph(StyledString("Paragraph 1")),
+                        Paragraph(StyledString("Paragraph 2")),
+                        Paragraph(StyledString("Paragraph 3"))
+                    )
+                )
+            )
+        }
+
+        @Test
+        fun `does not allow empty rules`() {
+            val input = """
+                <rule></rule>
+            """.trimIndent().byteInputStream()
+            val reader = factory.createXMLEventReader(input).apply {
+                nextEvent() // Skip the START_DOCUMENT event
+            }
+
+            assertThrows<RuntimeException> {
+                reader.parseRule()
+            }
+        }
+    }
 }
