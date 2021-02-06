@@ -14,164 +14,179 @@ class XmlReaderExtensionsTest {
 
     private val factory = XMLInputFactory.newInstance()
 
-    @ParameterizedTest
-    @ValueSource(strings = ["\n", " ", "Emphasized text", " Emphasized text "])
-    fun `handles emphasis`(emphasizedText: String) {
-        val input = "<e>$emphasizedText</e>".byteInputStream()
-        val reader = factory.createXMLEventReader(input).apply {
-            nextEvent() // Skip the START_DOCUMENT event
+    @Nested
+    @DisplayName("when parsing styled text")
+    inner class StyledTextParserTest {
+
+        @Nested
+        @DisplayName("when parsing style elements")
+        inner class StyleElementsParserTest {
+
+            @ParameterizedTest
+            @ValueSource(strings = ["\n", " ", "Emphasized text", " Emphasized text "])
+            fun `handles emphasis`(emphasizedText: String) {
+                val input = "<e>$emphasizedText</e>".byteInputStream()
+                val reader = factory.createXMLEventReader(input).apply {
+                    nextEvent() // Skip the START_DOCUMENT event
+                }
+
+                val output = reader.parseStyledSubstring()
+
+                assertThat(output).isEqualTo(emphasizedText to StyleType.EMPHASIS)
+            }
+
+            @ParameterizedTest
+            @ValueSource(strings = ["\n", " ", "Emphasized text", " Emphasized text "])
+            fun `handles strong emphasis`(emphasizedText: String) {
+                val input = "<s>$emphasizedText</s>".byteInputStream()
+                val reader = factory.createXMLEventReader(input).apply {
+                    nextEvent() // Skip the START_DOCUMENT event
+                }
+
+                val output = reader.parseStyledSubstring()
+
+                assertThat(output).isEqualTo(emphasizedText to StyleType.STRONG_EMPHASIS)
+            }
+
+            @ParameterizedTest
+            @ValueSource(strings = ["\n", " ", "Emphasized text", " Emphasized text "])
+            fun `handles misspell style`(emphasizedText: String) {
+                val input = "<m>$emphasizedText</m>".byteInputStream()
+                val reader = factory.createXMLEventReader(input).apply {
+                    nextEvent() // Skip the START_DOCUMENT event
+                }
+
+                val output = reader.parseStyledSubstring()
+
+                assertThat(output).isEqualTo(emphasizedText to StyleType.MISSPELL)
+            }
+
+            @Test
+            fun `does not allow empty styled text`() {
+                val input = "<e></e>".byteInputStream()
+                val reader = factory.createXMLEventReader(input).apply {
+                    nextEvent() // Skip the START_DOCUMENT event
+                }
+
+                assertThrows<RuntimeException> {
+                    reader.parseStyledSubstring()
+                }
+            }
         }
 
-        val output = reader.parseStyledSubstring()
+        @Nested
+        @DisplayName("when parsing links")
+        inner class LinksParserTest {
 
-        assertThat(output).isEqualTo(emphasizedText to StyleType.EMPHASIS)
-    }
+            @ParameterizedTest
+            @ValueSource(strings = ["\n", " ", "Emphasized text", " Emphasized text "])
+            fun `handles links`(emphasizedText: String) {
+                val input = "<l rule=\"1\">$emphasizedText</l>".byteInputStream()
+                val reader = factory.createXMLEventReader(input).apply {
+                    nextEvent() // Skip the START_DOCUMENT event
+                }
 
-    @ParameterizedTest
-    @ValueSource(strings = ["\n", " ", "Emphasized text", " Emphasized text "])
-    fun `handles strong emphasis`(emphasizedText: String) {
-        val input = "<s>$emphasizedText</s>".byteInputStream()
-        val reader = factory.createXMLEventReader(input).apply {
-            nextEvent() // Skip the START_DOCUMENT event
+                val output = reader.parseLink()
+
+                assertThat(output).isEqualTo(emphasizedText to 1)
+            }
+
+            @Test
+            fun `does not allow links to nowhere`() {
+                val input = "<l>Emphasized text</l>".byteInputStream()
+                val reader = factory.createXMLEventReader(input).apply {
+                    nextEvent() // Skip the START_DOCUMENT event
+                }
+
+                assertThrows<RuntimeException> {
+                    reader.parseLink()
+                }
+            }
+
+            @Test
+            fun `does not allow links with a string value`() {
+                val input = "<l rule=\"str\">Emphasized text</l>".byteInputStream()
+                val reader = factory.createXMLEventReader(input).apply {
+                    nextEvent() // Skip the START_DOCUMENT event
+                }
+
+                assertThrows<RuntimeException> {
+                    reader.parseLink()
+                }
+            }
+
+            @Test
+            fun `does not allow empty links`() {
+                val input = "<l rule=\"1\"></l>".byteInputStream()
+                val reader = factory.createXMLEventReader(input).apply {
+                    nextEvent() // Skip the START_DOCUMENT event
+                }
+
+                assertThrows<RuntimeException> {
+                    reader.parseLink()
+                }
+            }
         }
 
-        val output = reader.parseStyledSubstring()
+        @ParameterizedTest
+        @ValueSource(strings = [" ", "\n", "Text", "Te xt\nText\n"])
+        fun `handles plain text`(plainText: String) {
+            val input = "<test>$plainText</test>".byteInputStream()
+            val reader = factory.createXMLEventReader(input).apply {
+                nextEvent() // Skip the START_DOCUMENT event
+                nextEvent() // Skip the <test> tag
+            }
 
-        assertThat(output).isEqualTo(emphasizedText to StyleType.STRONG_EMPHASIS)
-    }
+            val output = reader.parseStyledText()
 
-    @ParameterizedTest
-    @ValueSource(strings = ["\n", " ", "Emphasized text", " Emphasized text "])
-    fun `handles misspell style`(emphasizedText: String) {
-        val input = "<m>$emphasizedText</m>".byteInputStream()
-        val reader = factory.createXMLEventReader(input).apply {
-            nextEvent() // Skip the START_DOCUMENT event
+            assertThat(output).isEqualTo(StyledString(plainText))
         }
 
-        val output = reader.parseStyledSubstring()
+        @Test
+        fun `handles styled text`() {
+            val input = "<test><e>01</e>23<s>45</s>67<m>89</m>01<l rule=\"1\">23</l></test>".byteInputStream()
+            val reader = factory.createXMLEventReader(input).apply {
+                nextEvent() // Skip the START_DOCUMENT event
+                nextEvent() // Skip the <test> tag
+            }
 
-        assertThat(output).isEqualTo(emphasizedText to StyleType.MISSPELL)
-    }
+            val output = reader.parseStyledText()
 
-    @Test
-    fun `does not allow empty styled text`() {
-        val input = "<e></e>".byteInputStream()
-        val reader = factory.createXMLEventReader(input).apply {
-            nextEvent() // Skip the START_DOCUMENT event
+            val styles = listOf(
+                CharacterStyle.emphasis(0, 2),
+                CharacterStyle.strongEmphasis(4, 6),
+                CharacterStyle.misspell(8, 10),
+            )
+            val links = listOf(
+                Link(12, 14, 1)
+            )
+            assertThat(output).isEqualTo(StyledString("01234567890123", styles, links))
         }
 
-        assertThrows<RuntimeException> {
-            reader.parseStyledSubstring()
-        }
-    }
+        @Test
+        fun `does not allow empty text`() {
+            val input = "<test></test>".byteInputStream()
+            val reader = factory.createXMLEventReader(input).apply {
+                nextEvent() // Skip the START_DOCUMENT event
+                nextEvent() // Skip the <test> tag
+            }
 
-    @ParameterizedTest
-    @ValueSource(strings = ["\n", " ", "Emphasized text", " Emphasized text "])
-    fun `handles links`(emphasizedText: String) {
-        val input = "<l rule=\"1\">$emphasizedText</l>".byteInputStream()
-        val reader = factory.createXMLEventReader(input).apply {
-            nextEvent() // Skip the START_DOCUMENT event
-        }
-
-        val output = reader.parseLink()
-
-        assertThat(output).isEqualTo(emphasizedText to 1)
-    }
-
-    @Test
-    fun `does not allow links to nowhere`() {
-        val input = "<l>Emphasized text</l>".byteInputStream()
-        val reader = factory.createXMLEventReader(input).apply {
-            nextEvent() // Skip the START_DOCUMENT event
+            assertThrows<RuntimeException> {
+                reader.parseStyledText()
+            }
         }
 
-        assertThrows<RuntimeException> {
-            reader.parseLink()
-        }
-    }
+        @Test
+        fun `does not allow nested style tags`() {
+            val input = "<test><e><m>Text</m></e></test>".byteInputStream()
+            val reader = factory.createXMLEventReader(input).apply {
+                nextEvent() // Skip the START_DOCUMENT event
+                nextEvent() // Skip the <test> tag
+            }
 
-    @Test
-    fun `does not allow links with a string value`() {
-        val input = "<l rule=\"str\">Emphasized text</l>".byteInputStream()
-        val reader = factory.createXMLEventReader(input).apply {
-            nextEvent() // Skip the START_DOCUMENT event
-        }
-
-        assertThrows<RuntimeException> {
-            reader.parseLink()
-        }
-    }
-
-    @Test
-    fun `does not allow empty links`() {
-        val input = "<l rule=\"1\"></l>".byteInputStream()
-        val reader = factory.createXMLEventReader(input).apply {
-            nextEvent() // Skip the START_DOCUMENT event
-        }
-
-        assertThrows<RuntimeException> {
-            reader.parseLink()
-        }
-    }
-
-    @ParameterizedTest
-    @ValueSource(strings = [" ", "\n", "Text", "Te xt\nText\n"])
-    fun `handles plain text`(plainText: String) {
-        val input = "<test>$plainText</test>".byteInputStream()
-        val reader = factory.createXMLEventReader(input).apply {
-            nextEvent() // Skip the START_DOCUMENT event
-            nextEvent() // Skip the <test> tag
-        }
-
-        val output = reader.parseStyledText()
-
-        assertThat(output).isEqualTo(StyledString(plainText))
-    }
-
-    @Test
-    fun `handles styled text`() {
-        val input = "<test><e>01</e>23<s>45</s>67<m>89</m>01<l rule=\"1\">23</l></test>".byteInputStream()
-        val reader = factory.createXMLEventReader(input).apply {
-            nextEvent() // Skip the START_DOCUMENT event
-            nextEvent() // Skip the <test> tag
-        }
-
-        val output = reader.parseStyledText()
-
-        val styles = listOf(
-            CharacterStyle.emphasis(0, 2),
-            CharacterStyle.strongEmphasis(4, 6),
-            CharacterStyle.misspell(8, 10),
-        )
-        val links = listOf(
-            Link(12, 14, 1)
-        )
-        assertThat(output).isEqualTo(StyledString("01234567890123", styles, links))
-    }
-
-    @Test
-    fun `does not allow empty text`() {
-        val input = "<test></test>".byteInputStream()
-        val reader = factory.createXMLEventReader(input).apply {
-            nextEvent() // Skip the START_DOCUMENT event
-            nextEvent() // Skip the <test> tag
-        }
-
-        assertThrows<RuntimeException> {
-            reader.parseStyledText()
-        }
-    }
-
-    @Test
-    fun `does not allow nested style tags`() {
-        val input = "<test><e><m>Text</m></e></test>".byteInputStream()
-        val reader = factory.createXMLEventReader(input).apply {
-            nextEvent() // Skip the START_DOCUMENT event
-            nextEvent() // Skip the <test> tag
-        }
-
-        assertThrows<RuntimeException> {
-            reader.parseStyledText()
+            assertThrows<RuntimeException> {
+                reader.parseStyledText()
+            }
         }
     }
 
