@@ -205,7 +205,7 @@ class ParserTests {
 
         val output = parser.parse(input)
 
-        val rules = listOf(Rule("Rule 1".toStyledString()))
+        val rules = listOf(Rule(emptyList()))
         val sections = listOf(Section("Section 1".toStyledString(), rules))
         val chapters = listOf(Chapter("Chapter 1", sections))
         val expectedParts = listOf(Part("Part 1", chapters))

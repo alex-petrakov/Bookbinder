@@ -78,7 +78,7 @@ class Parser {
             reader.skipWhitespace()
         } while (!reader.peek().isEndElement)
         reader.consumeEndElement(RULE)
-        return Rule("Rule 1".toStyledString())
+        return Rule(emptyList())
     }
 
     private fun readParagraph(reader: XMLEventReader): StyledString {

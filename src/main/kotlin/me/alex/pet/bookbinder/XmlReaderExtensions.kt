@@ -6,11 +6,19 @@ import javax.xml.stream.events.EndElement
 import javax.xml.stream.events.StartElement
 import javax.xml.stream.events.XMLEvent
 
+private const val ATTR_STYLE = "style"
+private const val ATTR_INDENT = "indent"
 private const val ATTR_RULE = "rule"
+
+private const val ELEMENT_PARAGRAPH = "p"
 private const val ELEMENT_EMPHASIS = "e"
 private const val ELEMENT_STRONG_EMPHASIS = "s"
 private const val ELEMENT_MISSPELL = "m"
 private const val ELEMENT_LINK = "l"
+
+private const val PAR_STYLE_NORMAL = "normal"
+private const val PAR_STYLE_QUOTE = "quote"
+private const val PAR_STYLE_FOOTNOTE = "footnote"
 
 private val tagsToStyles = mapOf(
     ELEMENT_EMPHASIS to StyleType.EMPHASIS,
@@ -25,16 +33,53 @@ val styleTags = setOf(
 )
 
 
+fun XMLEventReader.parseParagraph(): Paragraph {
+    val startElement = consumeStartElement(ELEMENT_PARAGRAPH)
+
+    val attributes = startElement.attributeMap
+    val paragraphStyle = attributes.getParagraphStyle()
+    val paragraphIndentLevel = attributes.getIndentLevel()
+
+    val paragraphContent = parseStyledText()
+
+    consumeEndElement(ELEMENT_PARAGRAPH)
+
+    return Paragraph(paragraphContent, paragraphStyle, paragraphIndentLevel)
+}
+
+private fun Map<String, String>.getParagraphStyle(): ParagraphStyle {
+    return paragraphStyleOf(get(ATTR_STYLE) ?: PAR_STYLE_NORMAL)
+}
+
+private fun paragraphStyleOf(str: String): ParagraphStyle {
+    return when (str) {
+        PAR_STYLE_NORMAL -> ParagraphStyle.NORMAL
+        PAR_STYLE_QUOTE -> ParagraphStyle.QUOTE
+        PAR_STYLE_FOOTNOTE -> ParagraphStyle.FOOTNOTE
+        else -> throw RuntimeException()
+    }
+}
+
+private fun Map<String, String>.getIndentLevel(): Int {
+    val indentLevel = getIntAttribute(ATTR_INDENT) ?: 0
+    check(indentLevel in 0..5)
+    return indentLevel
+}
+
+private fun Map<String, String>.getIntAttribute(key: String): Int? {
+    return get(key)?.toIntOrNull()
+}
+
 fun XMLEventReader.parseStyledText(): StyledString {
     val textBuffer = StringBuilder()
-    val styles = mutableListOf<Style>()
+    val styles = mutableListOf<CharacterStyle>()
     val links = mutableListOf<Link>()
     do {
         val element = peek()
         when {
             element.isStyleStart -> {
                 val (str, style) = parseStyledSubstring()
-                styles.add(Style(textBuffer.length, textBuffer.length + str.length, style))
+                styles.add(CharacterStyle(textBuffer.length, textBuffer.length + str.length, style))
                 textBuffer.append(str)
             }
             element.isLinkStart -> {
@@ -58,7 +103,7 @@ private val XMLEvent.isLinkStart: Boolean
 fun XMLEventReader.parseLink(): Pair<String, Int> {
     val element = consumeStartElement(ELEMENT_LINK)
     val attributes = element.asStartElement().attributeMap
-    val rule = attributes[ATTR_RULE]?.toIntOrNull() ?: throw RuntimeException()
+    val rule = attributes.getIntAttribute(ATTR_RULE) ?: throw RuntimeException()
     if (rule < 1) {
         throw RuntimeException()
     }

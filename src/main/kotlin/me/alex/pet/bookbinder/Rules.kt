@@ -18,33 +18,41 @@ data class Section(
 )
 
 data class Rule(
-    val content: StyledString,
+    val paragraphs: List<Paragraph>
 )
+
+data class Paragraph(
+    val content: StyledString,
+    val style: ParagraphStyle = ParagraphStyle.NORMAL,
+    val indentLevel: Int = 0
+)
+
+enum class ParagraphStyle {
+    NORMAL,
+    QUOTE,
+    FOOTNOTE
+}
 
 data class StyledString(
     val string: String,
-    val styles: List<Style> = emptyList(),
-    val links: List<Link> = emptyList(),
-    val indents: List<Indent> = emptyList()
+    val styles: List<CharacterStyle> = emptyList(),
+    val links: List<Link> = emptyList()
 )
 
 fun String.toStyledString(): StyledString = StyledString(this)
 
-data class Style(val start: Int, val end: Int, val styleType: StyleType) {
+data class CharacterStyle(val start: Int, val end: Int, val styleType: StyleType) {
     companion object {
-        fun emphasis(start: Int, end: Int) = Style(start, end, StyleType.EMPHASIS)
-        fun strongEmphasis(start: Int, end: Int) = Style(start, end, StyleType.STRONG_EMPHASIS)
-        fun misspell(start: Int, end: Int) = Style(start, end, StyleType.MISSPELL)
+        fun emphasis(start: Int, end: Int) = CharacterStyle(start, end, StyleType.EMPHASIS)
+        fun strongEmphasis(start: Int, end: Int) = CharacterStyle(start, end, StyleType.STRONG_EMPHASIS)
+        fun misspell(start: Int, end: Int) = CharacterStyle(start, end, StyleType.MISSPELL)
     }
 }
 
 enum class StyleType {
     EMPHASIS,
     STRONG_EMPHASIS,
-    MISSPELL,
-    QUOTE
+    MISSPELL
 }
-
-data class Indent(val start: Int, val end: Int, val level: Int)
 
 data class Link(val start: Int, val end: Int, val sectionId: Int)
