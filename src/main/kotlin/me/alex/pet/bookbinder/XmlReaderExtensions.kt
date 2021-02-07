@@ -10,6 +10,7 @@ private const val ATTR_STYLE = "style"
 private const val ATTR_INDENT = "indent"
 private const val ATTR_RULE = "rule"
 
+private const val ELEMENT_PART = "part"
 private const val ELEMENT_CHAPTER = "chapter"
 private const val ELEMENT_SECTION = "section"
 private const val ELEMENT_RULE = "rule"
@@ -36,6 +37,18 @@ val styleTags = setOf(
     ELEMENT_MISSPELL
 )
 
+
+fun XMLEventReader.parsePart(): Part {
+    consumeStartElement(ELEMENT_PART)
+    val name = parseName().string
+    val chapters = mutableListOf<Chapter>()
+    do {
+        chapters.add(parseChapter())
+        skipWhitespace()
+    } while (!peek().isEndElement)
+    consumeEndElement(ELEMENT_PART)
+    return Part(name, chapters)
+}
 
 fun XMLEventReader.parseChapter(): Chapter {
     consumeStartElement(ELEMENT_CHAPTER)

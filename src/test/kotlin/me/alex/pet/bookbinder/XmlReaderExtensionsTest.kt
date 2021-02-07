@@ -521,4 +521,105 @@ class XmlReaderExtensionsTest {
             }
         }
     }
+
+    @Nested
+    @DisplayName("when parsing parts")
+    inner class PartParserTest {
+
+        @Test
+        fun `handles parts`() {
+            val input = """
+                <part>
+                    <name>Part 1</name>
+                    <chapter>
+                        <name>Chapter 1</name>
+                        <section>
+                            <name>Section 1</name>
+                            <rule>
+                                <p>Paragraph 1</p>
+                            </rule>
+                        </section>
+                    </chapter>
+                </part>
+            """.trimIndent().byteInputStream()
+            val reader = factory.createXMLEventReader(input).apply {
+                nextEvent() // Skip the START_DOCUMENT event
+            }
+
+            val output = reader.parsePart()
+
+            val expectedParagraphs = listOf(Paragraph(StyledString("Paragraph 1")))
+            val expectedRules = listOf(Rule(expectedParagraphs))
+            val expectedSections = listOf(Section(StyledString("Section 1"), expectedRules))
+            val expectedChapters = listOf(Chapter("Chapter 1", expectedSections))
+            assertThat(output).isEqualTo(
+                Part("Part 1", expectedChapters)
+            )
+        }
+
+        @Test
+        fun `does not allow parts without a name`() {
+            val input = """
+                <part>
+                    <chapter>
+                        <name>Chapter 1</name>
+                        <section>
+                            <name>Section 1</name>
+                            <rule>
+                                <p>Paragraph 1</p>
+                            </rule>
+                        </section>
+                    </chapter>
+                </part>
+            """.trimIndent().byteInputStream()
+            val reader = factory.createXMLEventReader(input).apply {
+                nextEvent() // Skip the START_DOCUMENT event
+            }
+
+            assertThrows<RuntimeException> {
+                reader.parsePart()
+            }
+        }
+
+        @Test
+        fun `does not allow parts with empty names`() {
+            val input = """
+                <part>
+                    <name></name>
+                    <chapter>
+                        <name>Chapter 1</name>
+                        <section>
+                            <name>Section 1</name>
+                            <rule>
+                                <p>Paragraph 1</p>
+                            </rule>
+                        </section>
+                    </chapter>
+                </part>
+            """.trimIndent().byteInputStream()
+            val reader = factory.createXMLEventReader(input).apply {
+                nextEvent() // Skip the START_DOCUMENT event
+            }
+
+            assertThrows<RuntimeException> {
+                reader.parsePart()
+            }
+        }
+
+        @Test
+        fun `does not allow parts without chapters`() {
+            val input = """
+                <part>
+                    <name>Part 1</name>
+                </part>
+            """.trimIndent().byteInputStream()
+            val reader = factory.createXMLEventReader(input).apply {
+                nextEvent() // Skip the START_DOCUMENT event
+            }
+
+            assertThrows<RuntimeException> {
+                reader.parsePart()
+            }
+        }
+    }
 }
