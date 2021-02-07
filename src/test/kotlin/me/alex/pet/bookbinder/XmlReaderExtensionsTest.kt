@@ -349,4 +349,85 @@ class XmlReaderExtensionsTest {
             }
         }
     }
+
+    @Nested
+    @DisplayName("when parsing sections")
+    inner class SectionParserTest {
+
+        @Test
+        fun `handles sections`() {
+            val input = """
+                <section>
+                    <name>Section 1</name>
+                    <rule>
+                        <p>Paragraph 1</p>
+                    </rule>
+                </section>
+            """.trimIndent().byteInputStream()
+            val reader = factory.createXMLEventReader(input).apply {
+                nextEvent() // Skip the START_DOCUMENT event
+            }
+
+            val output = reader.parseSection()
+
+            val expectedParagraphs = listOf(Paragraph(StyledString("Paragraph 1")))
+            val expectedRules = listOf(Rule(expectedParagraphs))
+            assertThat(output).isEqualTo(
+                Section(StyledString("Section 1"), expectedRules)
+            )
+        }
+
+        @Test
+        fun `does not allow sections without a name`() {
+            val input = """
+                <section>
+                    <rule>
+                        <p>Paragraph 1</p>
+                    </rule>
+                </section>
+            """.trimIndent().byteInputStream()
+            val reader = factory.createXMLEventReader(input).apply {
+                nextEvent() // Skip the START_DOCUMENT event
+            }
+
+            assertThrows<RuntimeException> {
+                reader.parseSection()
+            }
+        }
+
+        @Test
+        fun `does not allow sections with empty names`() {
+            val input = """
+                <section>
+                    <name></name>
+                    <rule>
+                        <p>Paragraph 1</p>
+                    </rule>
+                </section>
+            """.trimIndent().byteInputStream()
+            val reader = factory.createXMLEventReader(input).apply {
+                nextEvent() // Skip the START_DOCUMENT event
+            }
+
+            assertThrows<RuntimeException> {
+                reader.parseSection()
+            }
+        }
+
+        @Test
+        fun `does not allow sections without rules`() {
+            val input = """
+                <section>
+                    <name>Section 1</name>
+                </section>
+            """.trimIndent().byteInputStream()
+            val reader = factory.createXMLEventReader(input).apply {
+                nextEvent() // Skip the START_DOCUMENT event
+            }
+
+            assertThrows<RuntimeException> {
+                reader.parseSection()
+            }
+        }
+    }
 }

@@ -10,7 +10,9 @@ private const val ATTR_STYLE = "style"
 private const val ATTR_INDENT = "indent"
 private const val ATTR_RULE = "rule"
 
+private const val ELEMENT_SECTION = "section"
 private const val ELEMENT_RULE = "rule"
+private const val ELEMENT_NAME = "name"
 private const val ELEMENT_PARAGRAPH = "p"
 private const val ELEMENT_EMPHASIS = "e"
 private const val ELEMENT_STRONG_EMPHASIS = "s"
@@ -33,6 +35,25 @@ val styleTags = setOf(
     ELEMENT_MISSPELL
 )
 
+
+fun XMLEventReader.parseSection(): Section {
+    consumeStartElement(ELEMENT_SECTION)
+    val name = parseName()
+    val rules = mutableListOf<Rule>()
+    do {
+        rules.add(parseRule())
+        skipWhitespace()
+    } while (!peek().isEndElement)
+    consumeEndElement(ELEMENT_SECTION)
+    return Section(name, rules)
+}
+
+private fun XMLEventReader.parseName(): StyledString {
+    consumeStartElement(ELEMENT_NAME)
+    val name = parseStyledText()
+    consumeEndElement(ELEMENT_NAME)
+    return name
+}
 
 fun XMLEventReader.parseRule(): Rule {
     consumeStartElement(ELEMENT_RULE)
