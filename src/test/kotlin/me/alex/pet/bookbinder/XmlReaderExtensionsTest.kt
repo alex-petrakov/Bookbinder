@@ -622,4 +622,53 @@ class XmlReaderExtensionsTest {
             }
         }
     }
+
+    @Nested
+    @DisplayName("when parsing a book")
+    inner class BookParserTest {
+
+        @Test
+        fun `handles book`() {
+            val input = """
+                <book>
+                    <part>
+                        <name>Part 1</name>
+                        <chapter>
+                            <name>Chapter 1</name>
+                            <section>
+                                <name>Section 1</name>
+                                <rule>
+                                    <p>Paragraph 1</p>
+                                </rule>
+                            </section>
+                        </chapter>
+                    </part>
+                </book>
+            """.trimIndent().byteInputStream()
+            val reader = factory.createXMLEventReader(input).apply {
+                nextEvent() // Skip the START_DOCUMENT event
+            }
+
+            val output = reader.parseBook()
+
+            val expectedParagraphs = listOf(Paragraph(StyledString("Paragraph 1")))
+            val expectedRules = listOf(Rule(expectedParagraphs))
+            val expectedSections = listOf(Section(StyledString("Section 1"), expectedRules))
+            val expectedChapters = listOf(Chapter("Chapter 1", expectedSections))
+            val expectedParts = listOf(Part("Part 1", expectedChapters))
+            assertThat(output).isEqualTo(expectedParts)
+        }
+
+        @Test
+        fun `does not permit an empty book`() {
+            val input = "<book></book>".byteInputStream()
+            val reader = factory.createXMLEventReader(input).apply {
+                nextEvent() // Skip the START_DOCUMENT event
+            }
+
+            assertThrows<RuntimeException> {
+                reader.parseBook()
+            }
+        }
+    }
 }
