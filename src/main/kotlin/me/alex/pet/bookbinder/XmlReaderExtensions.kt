@@ -29,9 +29,9 @@ private const val PAR_STYLE_QUOTE = "quote"
 private const val PAR_STYLE_FOOTNOTE = "footnote"
 
 private val tagsToStyles = mapOf(
-    ELEMENT_EMPHASIS to StyleType.EMPHASIS,
-    ELEMENT_STRONG_EMPHASIS to StyleType.STRONG_EMPHASIS,
-    ELEMENT_MISSPELL to StyleType.MISSPELL
+    ELEMENT_EMPHASIS to CharacterStyleType.EMPHASIS,
+    ELEMENT_STRONG_EMPHASIS to CharacterStyleType.STRONG_EMPHASIS,
+    ELEMENT_MISSPELL to CharacterStyleType.MISSPELL
 )
 
 private val styleTags = setOf(
@@ -200,7 +200,7 @@ private fun Iterator<Attribute>.toMap(): Map<String, String> {
     return asSequence().associate { it.name.localPart to it.value }
 }
 
-fun XMLEventReader.parseStyledSubstring(): Pair<String, StyleType> {
+fun XMLEventReader.parseStyledSubstring(): Pair<String, CharacterStyleType> {
     val startElement = consumeStartElement()
     val style = tagsToStyles[startElement.localName] ?: throw RuntimeException()
     val text = readText()

@@ -32,7 +32,7 @@ class XmlReaderExtensionsTest {
 
                 val output = reader.parseStyledSubstring()
 
-                assertThat(output).isEqualTo(emphasizedText to StyleType.EMPHASIS)
+                assertThat(output).isEqualTo(emphasizedText to CharacterStyleType.EMPHASIS)
             }
 
             @ParameterizedTest
@@ -45,7 +45,7 @@ class XmlReaderExtensionsTest {
 
                 val output = reader.parseStyledSubstring()
 
-                assertThat(output).isEqualTo(emphasizedText to StyleType.STRONG_EMPHASIS)
+                assertThat(output).isEqualTo(emphasizedText to CharacterStyleType.STRONG_EMPHASIS)
             }
 
             @ParameterizedTest
@@ -58,7 +58,7 @@ class XmlReaderExtensionsTest {
 
                 val output = reader.parseStyledSubstring()
 
-                assertThat(output).isEqualTo(emphasizedText to StyleType.MISSPELL)
+                assertThat(output).isEqualTo(emphasizedText to CharacterStyleType.MISSPELL)
             }
 
             @Test

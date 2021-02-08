@@ -39,15 +39,15 @@ data class StyledString(
     val links: List<Link> = emptyList()
 )
 
-data class CharacterStyle(val start: Int, val end: Int, val styleType: StyleType) {
+data class CharacterStyle(val start: Int, val end: Int, val styleType: CharacterStyleType) {
     companion object {
-        fun emphasis(start: Int, end: Int) = CharacterStyle(start, end, StyleType.EMPHASIS)
-        fun strongEmphasis(start: Int, end: Int) = CharacterStyle(start, end, StyleType.STRONG_EMPHASIS)
-        fun misspell(start: Int, end: Int) = CharacterStyle(start, end, StyleType.MISSPELL)
+        fun emphasis(start: Int, end: Int) = CharacterStyle(start, end, CharacterStyleType.EMPHASIS)
+        fun strongEmphasis(start: Int, end: Int) = CharacterStyle(start, end, CharacterStyleType.STRONG_EMPHASIS)
+        fun misspell(start: Int, end: Int) = CharacterStyle(start, end, CharacterStyleType.MISSPELL)
     }
 }
 
-enum class StyleType {
+enum class CharacterStyleType {
     EMPHASIS,
     STRONG_EMPHASIS,
     MISSPELL
