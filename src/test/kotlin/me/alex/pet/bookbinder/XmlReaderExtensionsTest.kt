@@ -630,6 +630,7 @@ class XmlReaderExtensionsTest {
         @Test
         fun `handles book`() {
             val input = """
+                <?xml version="1.0" encoding="UTF-8"?>
                 <book>
                     <part>
                         <name>Part 1</name>
@@ -645,9 +646,7 @@ class XmlReaderExtensionsTest {
                     </part>
                 </book>
             """.trimIndent().byteInputStream()
-            val reader = factory.createXMLEventReader(input).apply {
-                nextEvent() // Skip the START_DOCUMENT event
-            }
+            val reader = factory.createXMLEventReader(input)
 
             val output = reader.parseBook()
 
@@ -661,10 +660,11 @@ class XmlReaderExtensionsTest {
 
         @Test
         fun `does not permit an empty book`() {
-            val input = "<book></book>".byteInputStream()
-            val reader = factory.createXMLEventReader(input).apply {
-                nextEvent() // Skip the START_DOCUMENT event
-            }
+            val input = """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <book></book>
+            """.trimIndent().byteInputStream()
+            val reader = factory.createXMLEventReader(input)
 
             assertThrows<RuntimeException> {
                 reader.parseBook()

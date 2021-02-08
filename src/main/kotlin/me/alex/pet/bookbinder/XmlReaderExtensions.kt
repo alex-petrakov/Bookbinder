@@ -32,7 +32,7 @@ private val tagsToStyles = mapOf(
     ELEMENT_MISSPELL to StyleType.MISSPELL
 )
 
-val styleTags = setOf(
+private val styleTags = setOf(
     ELEMENT_EMPHASIS,
     ELEMENT_STRONG_EMPHASIS,
     ELEMENT_MISSPELL
@@ -40,6 +40,7 @@ val styleTags = setOf(
 
 
 fun XMLEventReader.parseBook(): Book {
+    consumeStartDocument()
     consumeStartElement(ELEMENT_BOOK)
     val parts = mutableListOf<Part>()
     do {
@@ -47,6 +48,7 @@ fun XMLEventReader.parseBook(): Book {
         skipWhitespace()
     } while (!peek().isEndElement)
     consumeEndElement(ELEMENT_BOOK)
+    consumeEndDocument()
     return parts
 }
 
@@ -198,6 +200,18 @@ fun XMLEventReader.parseStyledSubstring(): Pair<String, StyleType> {
 }
 
 private val StartElement.localName get() = name.localPart
+
+private fun XMLEventReader.consumeStartDocument() {
+    if (!nextEvent().isStartDocument) {
+        throw RuntimeException()
+    }
+}
+
+private fun XMLEventReader.consumeEndDocument() {
+    if (!nextEvent().isEndDocument) {
+        throw RuntimeException()
+    }
+}
 
 private fun XMLEventReader.consumeStartElement(requiredName: String): StartElement {
     val startElement = consumeStartElement()
