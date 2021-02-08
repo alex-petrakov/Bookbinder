@@ -1,6 +1,8 @@
 package me.alex.pet.bookbinder
 
+import javax.xml.stream.Location
 import javax.xml.stream.XMLEventReader
+import javax.xml.stream.XMLStreamException
 import javax.xml.stream.events.Attribute
 import javax.xml.stream.events.EndElement
 import javax.xml.stream.events.StartElement
@@ -37,6 +39,13 @@ private val styleTags = setOf(
     ELEMENT_STRONG_EMPHASIS,
     ELEMENT_MISSPELL
 )
+
+
+class UnexpectedXmlException(
+    msg: String,
+    location: Location,
+    cause: Throwable? = null
+) : XMLStreamException(msg, location, cause)
 
 
 fun XMLEventReader.parseBook(): Book {
@@ -200,23 +209,29 @@ fun XMLEventReader.parseStyledSubstring(): Pair<String, StyleType> {
 }
 
 private val StartElement.localName get() = name.localPart
+private val EndElement.localName get() = name.localPart
 
 private fun XMLEventReader.consumeStartDocument() {
-    if (!nextEvent().isStartDocument) {
-        throw RuntimeException()
+    val event = nextEvent()
+    if (!event.isStartDocument) {
+        throw UnexpectedXmlException("A START_DOCUMENT was expected but it was ${event.eventType}", event.location)
     }
 }
 
 private fun XMLEventReader.consumeEndDocument() {
-    if (!nextEvent().isEndDocument) {
-        throw RuntimeException()
+    val event = nextEvent()
+    if (!event.isEndDocument) {
+        throw UnexpectedXmlException("An END_DOCUMENT was expected but it was ${event.eventType}", event.location)
     }
 }
 
 private fun XMLEventReader.consumeStartElement(requiredName: String): StartElement {
     val startElement = consumeStartElement()
-    if (startElement.name.localPart != requiredName) {
-        throw RuntimeException()
+    if (startElement.localName != requiredName) {
+        throw UnexpectedXmlException(
+            "A <$requiredName> element was expected but it was <${startElement.localName}>",
+            startElement.location
+        )
     }
     return startElement
 }
@@ -225,15 +240,18 @@ private fun XMLEventReader.consumeStartElement(): StartElement {
     skipWhitespace()
     val event = nextEvent()
     if (!event.isStartElement) {
-        throw RuntimeException()
+        throw UnexpectedXmlException("A START_ELEMENT was expected but it was ${event.eventType}", event.location)
     }
     return event.asStartElement()
 }
 
 private fun XMLEventReader.consumeEndElement(requiredName: String): EndElement {
     val endElement = consumeEndElement()
-    if (endElement.name.localPart != requiredName) {
-        throw RuntimeException()
+    if (endElement.localName != requiredName) {
+        throw UnexpectedXmlException(
+            "A </$requiredName> element was expected but it was </${endElement.localName}>",
+            endElement.location
+        )
     }
     return endElement
 }
@@ -242,7 +260,7 @@ private fun XMLEventReader.consumeEndElement(): EndElement {
     skipWhitespace()
     val event = nextEvent()
     if (!event.isEndElement) {
-        throw RuntimeException()
+        throw UnexpectedXmlException("An END_ELEMENT was expected but it was ${event.eventType}", event.location)
     }
     return event.asEndElement()
 }
@@ -256,8 +274,9 @@ private fun XMLEventReader.skipWhitespace() {
 }
 
 private fun XMLEventReader.readText(): String {
-    if (!peek().isCharacters) {
-        throw RuntimeException()
+    val event = nextEvent()
+    if (!event.isCharacters) {
+        throw UnexpectedXmlException("Text was expected but it was ${event.eventType}", event.location)
     }
-    return nextEvent().asCharacters().data
+    return event.asCharacters().data
 }

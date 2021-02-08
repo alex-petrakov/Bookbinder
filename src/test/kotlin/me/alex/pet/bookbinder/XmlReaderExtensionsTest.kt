@@ -68,7 +68,7 @@ class XmlReaderExtensionsTest {
                     nextEvent() // Skip the START_DOCUMENT event
                 }
 
-                assertThrows<RuntimeException> {
+                assertThrows<UnexpectedXmlException> {
                     reader.parseStyledSubstring()
                 }
             }
@@ -98,7 +98,7 @@ class XmlReaderExtensionsTest {
                     nextEvent() // Skip the START_DOCUMENT event
                 }
 
-                assertThrows<RuntimeException> {
+                assertThrows<UnexpectedXmlException> {
                     reader.parseLink()
                 }
             }
@@ -198,7 +198,7 @@ class XmlReaderExtensionsTest {
                 nextEvent() // Skip the <test> tag
             }
 
-            assertThrows<RuntimeException> {
+            assertThrows<UnexpectedXmlException> {
                 reader.parseStyledText()
             }
         }
@@ -344,7 +344,7 @@ class XmlReaderExtensionsTest {
                 nextEvent() // Skip the START_DOCUMENT event
             }
 
-            assertThrows<RuntimeException> {
+            assertThrows<UnexpectedXmlException> {
                 reader.parseRule()
             }
         }
@@ -390,7 +390,7 @@ class XmlReaderExtensionsTest {
                 nextEvent() // Skip the START_DOCUMENT event
             }
 
-            assertThrows<RuntimeException> {
+            assertThrows<UnexpectedXmlException> {
                 reader.parseSection()
             }
         }
@@ -425,7 +425,7 @@ class XmlReaderExtensionsTest {
                 nextEvent() // Skip the START_DOCUMENT event
             }
 
-            assertThrows<RuntimeException> {
+            assertThrows<UnexpectedXmlException> {
                 reader.parseSection()
             }
         }
@@ -478,7 +478,7 @@ class XmlReaderExtensionsTest {
                 nextEvent() // Skip the START_DOCUMENT event
             }
 
-            assertThrows<RuntimeException> {
+            assertThrows<UnexpectedXmlException> {
                 reader.parseChapter()
             }
         }
@@ -516,7 +516,7 @@ class XmlReaderExtensionsTest {
                 nextEvent() // Skip the START_DOCUMENT event
             }
 
-            assertThrows<RuntimeException> {
+            assertThrows<UnexpectedXmlException> {
                 reader.parseChapter()
             }
         }
@@ -576,7 +576,7 @@ class XmlReaderExtensionsTest {
                 nextEvent() // Skip the START_DOCUMENT event
             }
 
-            assertThrows<RuntimeException> {
+            assertThrows<UnexpectedXmlException> {
                 reader.parsePart()
             }
         }
@@ -617,7 +617,7 @@ class XmlReaderExtensionsTest {
                 nextEvent() // Skip the START_DOCUMENT event
             }
 
-            assertThrows<RuntimeException> {
+            assertThrows<UnexpectedXmlException> {
                 reader.parsePart()
             }
         }
@@ -666,7 +666,7 @@ class XmlReaderExtensionsTest {
             """.trimIndent().byteInputStream()
             val reader = factory.createXMLEventReader(input)
 
-            assertThrows<RuntimeException> {
+            assertThrows<UnexpectedXmlException> {
                 reader.parseBook()
             }
         }
