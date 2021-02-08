@@ -39,8 +39,6 @@ data class StyledString(
     val links: List<Link> = emptyList()
 )
 
-fun String.toStyledString(): StyledString = StyledString(this)
-
 data class CharacterStyle(val start: Int, val end: Int, val styleType: StyleType) {
     companion object {
         fun emphasis(start: Int, end: Int) = CharacterStyle(start, end, StyleType.EMPHASIS)
