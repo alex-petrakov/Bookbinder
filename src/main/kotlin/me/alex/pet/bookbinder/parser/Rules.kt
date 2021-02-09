@@ -1,4 +1,4 @@
-package me.alex.pet.bookbinder
+package me.alex.pet.bookbinder.parser
 
 typealias Book = List<Part>
 

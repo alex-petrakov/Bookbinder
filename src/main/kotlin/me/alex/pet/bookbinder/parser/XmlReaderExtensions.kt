@@ -1,4 +1,4 @@
-package me.alex.pet.bookbinder
+package me.alex.pet.bookbinder.parser
 
 import javax.xml.namespace.QName
 import javax.xml.stream.Location
