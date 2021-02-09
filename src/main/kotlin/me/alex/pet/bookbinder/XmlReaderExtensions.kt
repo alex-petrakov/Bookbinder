@@ -47,6 +47,8 @@ class UnexpectedXmlException(
     cause: Throwable? = null
 ) : XMLStreamException(msg, location, cause)
 
+private class IllegalAttributeValue(message: String, cause: Throwable? = null) : RuntimeException(message, cause)
+
 
 fun XMLEventReader.parseBook(): Book {
     consumeStartDocument()
@@ -119,8 +121,16 @@ fun XMLEventReader.parseParagraph(): Paragraph {
     val startElement = consumeStartElement(ELEMENT_PARAGRAPH)
 
     val attributes = startElement.attributeMap
-    val paragraphStyle = attributes.getParagraphStyle()
-    val paragraphIndentLevel = attributes.getIndentLevel()
+    val paragraphStyle = try {
+        attributes.getParagraphStyle()
+    } catch (e: IllegalAttributeValue) {
+        throw UnexpectedXmlException("Illegal paragraph style", startElement.location, e)
+    }
+    val paragraphIndentLevel = try {
+        attributes.getIndentLevel()
+    } catch (e: IllegalAttributeValue) {
+        throw UnexpectedXmlException("Illegal indent level", startElement.location, e)
+    }
 
     val paragraphContent = parseStyledText()
 
@@ -130,21 +140,28 @@ fun XMLEventReader.parseParagraph(): Paragraph {
 }
 
 private fun Map<String, String>.getParagraphStyle(): ParagraphStyle {
-    return paragraphStyleOf(get(ATTR_STYLE) ?: PAR_STYLE_NORMAL)
+    val attrStringValue = get(ATTR_STYLE) ?: PAR_STYLE_NORMAL
+    return paragraphStyleOf(attrStringValue) ?: throw IllegalAttributeValue(
+        "Illegal '$ATTR_STYLE' attribute value $attrStringValue}"
+    )
 }
 
-private fun paragraphStyleOf(str: String): ParagraphStyle {
+private fun paragraphStyleOf(str: String): ParagraphStyle? {
     return when (str) {
         PAR_STYLE_NORMAL -> ParagraphStyle.NORMAL
         PAR_STYLE_QUOTE -> ParagraphStyle.QUOTE
         PAR_STYLE_FOOTNOTE -> ParagraphStyle.FOOTNOTE
-        else -> throw RuntimeException()
+        else -> null
     }
 }
 
 private fun Map<String, String>.getIndentLevel(): Int {
     val indentLevel = getIntAttribute(ATTR_INDENT) ?: 0
-    check(indentLevel in 0..5)
+    if (indentLevel !in 0..5) {
+        throw IllegalAttributeValue(
+            "Illegal '$ATTR_INDENT' attribute value $indentLevel, it must be in [0..5]"
+        )
+    }
     return indentLevel
 }
 
@@ -170,7 +187,7 @@ fun XMLEventReader.parseStyledText(): StyledString {
                 textBuffer.append(str)
             }
             element.isCharacters -> textBuffer.append(readText())
-            else -> throw RuntimeException()
+            else -> throw UnexpectedXmlException("Unexpected styled text element $element", element.location)
         }
     } while (!peek().isEndElement)
     return StyledString(textBuffer.toString(), styles = styles, links = links)
@@ -185,9 +202,15 @@ private val XMLEvent.isLinkStart: Boolean
 fun XMLEventReader.parseLink(): Pair<String, Int> {
     val element = consumeStartElement(ELEMENT_LINK)
     val attributes = element.asStartElement().attributeMap
-    val rule = attributes.getIntAttribute(ATTR_RULE) ?: throw RuntimeException()
+    val rule = attributes.getIntAttribute(ATTR_RULE) ?: throw UnexpectedXmlException(
+        "Missing '$ATTR_RULE' integer attribute",
+        element.location
+    )
     if (rule < 1) {
-        throw RuntimeException()
+        throw UnexpectedXmlException(
+            "'$ATTR_RULE' attribute value must be >= 1 but it was = $rule",
+            element.location
+        )
     }
     val text = readText()
     consumeEndElement(ELEMENT_LINK)
@@ -202,7 +225,10 @@ private fun Iterator<Attribute>.toMap(): Map<String, String> {
 
 fun XMLEventReader.parseStyledSubstring(): Pair<String, CharacterStyleType> {
     val startElement = consumeStartElement()
-    val style = tagsToStyles[startElement.localName] ?: throw RuntimeException()
+    val style = tagsToStyles[startElement.localName] ?: throw UnexpectedXmlException(
+        "Unknown style tag <${startElement.localName}>",
+        startElement.location
+    )
     val text = readText()
     consumeEndElement(startElement.localName)
     return text to style
