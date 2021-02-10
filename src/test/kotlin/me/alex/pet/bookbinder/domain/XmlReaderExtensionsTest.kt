@@ -1,4 +1,4 @@
-package me.alex.pet.bookbinder.parser
+package me.alex.pet.bookbinder.domain
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.DisplayName
