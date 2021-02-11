@@ -1,0 +1,11 @@
+insertPart:
+INSERT INTO part (id, number, name) VALUES (?, ?, ?);
+
+insertChapter:
+INSERT INTO chapter (id, part_id, number, name) VALUES (?, ?, ?, ?);
+
+insertSection:
+INSERT INTO section_core (id, chapter_id, number, name, markup, is_favorite) VALUES (?, ?, ?, ?, ?, ?);
+
+insertRule:
+INSERT INTO rule_core (id, section_id, number, content, markup, is_favorite) VALUES (?, ?, ?, ?, ?, ?);

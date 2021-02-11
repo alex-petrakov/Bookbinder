@@ -1,6 +1,17 @@
+buildscript {
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.squareup.sqldelight:gradle-plugin:1.4.4'
+    }
+}
+
 plugins {
     id 'org.jetbrains.kotlin.jvm' version '1.4.10'
 }
+apply plugin: 'com.squareup.sqldelight'
 
 group 'me.alex.pet'
 version '1.0-SNAPSHOT'
@@ -13,6 +24,7 @@ dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib"
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.4.2'
     implementation 'com.github.kittinunf.result:result:3.1.0'
+    implementation "com.squareup.sqldelight:sqlite-driver:1.4.4"
     testImplementation  "org.junit.jupiter:junit-jupiter:5.6.2"
     testImplementation "org.assertj:assertj-core:3.16.1"
 }
@@ -27,4 +39,10 @@ compileKotlin {
 
 compileTestKotlin {
     kotlinOptions.jvmTarget = "1.8"
+}
+
+sqldelight {
+    RulesDatabase {
+        packageName = "me.alex.pet.bookbinder.data"
+    }
 }
