@@ -1,0 +1,14 @@
+insertPart:
+INSERT INTO part (number, name) VALUES (?, ?);
+
+insertChapter:
+INSERT INTO chapter (part_id, number, name) VALUES (?, ?, ?);
+
+insertSection:
+INSERT INTO section_core (chapter_id, number, name, markup, is_favorite) VALUES (?, ?, ?, ?, 0);
+
+insertRule:
+INSERT INTO rule_core (section_id, number, content, markup, is_favorite) VALUES (?, ?, ?, ?, 0);
+
+lastInsertedRowId:
+SELECT last_insert_rowid();
