@@ -154,3 +154,5 @@ BEGIN
         is_favorite = new.is_favorite 
     WHERE id = old.id; 
 END;
+
+CREATE INDEX number_index ON rule_core (number);
