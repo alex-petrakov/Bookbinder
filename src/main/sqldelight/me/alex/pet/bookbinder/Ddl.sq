@@ -12,7 +12,6 @@ DROP TABLE IF EXISTS part;
 -- 
 CREATE TABLE part (
 	id INTEGER PRIMARY KEY,
-	number INTEGER UNIQUE NOT NULL,
 	name TEXT NOT NULL
 );
 
@@ -23,7 +22,6 @@ CREATE TABLE part (
 CREATE TABLE chapter(
 	id INTEGER PRIMARY KEY,
 	part_id INTEGER NOT NULL,
-	number INTEGER UNIQUE NOT NULL,
 	name TEXT NOT NULL,
 	FOREIGN KEY (part_id) REFERENCES part(id) ON DELETE CASCADE ON UPDATE CASCADE
 );
@@ -35,7 +33,6 @@ CREATE TABLE chapter(
 CREATE TABLE section_core (
 	id INTEGER PRIMARY KEY,
 	chapter_id INTEGER NOT NULL,
-	number INTEGER UNIQUE NOT NULL,
     name TEXT NOT NULL,
 	markup TEXT NOT NULL,
 	is_favorite INTEGER AS Boolean NOT NULL,
@@ -65,7 +62,6 @@ CREATE VIEW section AS
 SELECT 
     section_core.id AS id,
     section_core.chapter_id AS chapter_id,
-    section_core.number AS number,
     section_name_fts.name AS name,
     section_core.markup AS markup,
     section_core.is_favorite AS is_favorite
@@ -73,7 +69,7 @@ FROM section_core JOIN section_name_fts ON section_core.rowid = section_name_fts
 
 CREATE TRIGGER on_section_insert INSTEAD OF INSERT ON section
 BEGIN
-	INSERT INTO section_core(id, chapter_id, number, name, markup, is_favorite) VALUES (new.id, new.chapter_id, new.number, new.name, new.markup, new.is_favorite);
+	INSERT INTO section_core(id, chapter_id, name, markup, is_favorite) VALUES (new.id, new.chapter_id, new.name, new.markup, new.is_favorite);
 END;
 
 CREATE TRIGGER on_section_del INSTEAD OF DELETE ON section
@@ -86,8 +82,7 @@ BEGIN
 	UPDATE section_core
     SET
         id = new.id,
-        chapter_id = new.chapter_id, 
-        number = new.number, 
+        chapter_id = new.chapter_id,
         name = new.name, 
         markup = new.markup, 
         is_favorite = new.is_favorite
@@ -101,7 +96,7 @@ END;
 CREATE TABLE rule_core (
 	id INTEGER PRIMARY KEY,
 	section_id INTEGER NOT NULL,
-	number INTEGER NOT NULL,
+	number INTEGER UNIQUE NOT NULL,
     content TEXT NOT NULL,
 	markup TEXT NOT NULL,
 	is_favorite INTEGER AS Boolean NOT NULL,
