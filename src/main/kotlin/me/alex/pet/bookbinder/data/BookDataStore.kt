@@ -6,7 +6,7 @@ import me.alex.pet.bookbinder.domain.*
 
 class BookDataStore(private val bookQueries: BookQueries, private val moshi: Moshi) {
 
-    private var ruleNumber = 1L
+    private var ruleNumber = 1
 
     fun saveBook(book: Book) = bookQueries.transaction {
         resetRuleNumber()
@@ -42,7 +42,7 @@ class BookDataStore(private val bookQueries: BookQueries, private val moshi: Mos
     }
 
     private fun resetRuleNumber() {
-        ruleNumber = 1L
+        ruleNumber = 1
     }
 
     private fun nextRuleNumber() = ruleNumber++
