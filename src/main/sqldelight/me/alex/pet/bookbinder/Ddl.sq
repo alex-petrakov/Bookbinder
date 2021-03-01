@@ -150,3 +150,5 @@ BEGIN
 END;
 
 CREATE INDEX number_index ON rule_core (number);
+
+CREATE INDEX section_id_index ON rule_core (section_id);
