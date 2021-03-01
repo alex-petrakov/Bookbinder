@@ -35,7 +35,6 @@ CREATE TABLE section_core (
 	chapter_id INTEGER NOT NULL,
     name TEXT NOT NULL,
 	markup TEXT NOT NULL,
-	is_favorite INTEGER AS Boolean NOT NULL,
 	FOREIGN KEY (chapter_id) REFERENCES chapter(id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
@@ -63,13 +62,12 @@ SELECT
     section_core.id AS id,
     section_core.chapter_id AS chapter_id,
     section_name_fts.name AS name,
-    section_core.markup AS markup,
-    section_core.is_favorite AS is_favorite
+    section_core.markup AS markup
 FROM section_core JOIN section_name_fts ON section_core.rowid = section_name_fts.rowid;
 
 CREATE TRIGGER on_section_insert INSTEAD OF INSERT ON section
 BEGIN
-	INSERT INTO section_core(id, chapter_id, name, markup, is_favorite) VALUES (new.id, new.chapter_id, new.name, new.markup, new.is_favorite);
+	INSERT INTO section_core(id, chapter_id, name, markup) VALUES (new.id, new.chapter_id, new.name, new.markup);
 END;
 
 CREATE TRIGGER on_section_del INSTEAD OF DELETE ON section
@@ -84,9 +82,8 @@ BEGIN
         id = new.id,
         chapter_id = new.chapter_id,
         name = new.name, 
-        markup = new.markup, 
-        is_favorite = new.is_favorite
-    WHERE id = old.id; 
+        markup = new.markup
+    WHERE id = old.id;
 END;
 
 
@@ -99,7 +96,6 @@ CREATE TABLE rule_core (
 	number INTEGER UNIQUE NOT NULL,
     content TEXT NOT NULL,
 	markup TEXT NOT NULL,
-	is_favorite INTEGER AS Boolean NOT NULL,
 	FOREIGN KEY (section_id) REFERENCES section_core(id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
@@ -128,13 +124,12 @@ SELECT
     rule_core.section_id AS section_id,
     rule_core.number AS number,
     rule_content_fts.content AS content,
-    rule_core.markup AS markup,
-    rule_core.is_favorite AS is_favorite
+    rule_core.markup AS markup
 FROM rule_core JOIN rule_content_fts ON rule_core.rowid = rule_content_fts.rowid;
 
 CREATE TRIGGER on_rule_insert INSTEAD OF INSERT ON rule
 BEGIN
-	INSERT INTO rule_core(id, section_id, number, content, markup, is_favorite) VALUES (new.id, new.section_id, new.number, new.content, new.markup, new.is_favorite);
+	INSERT INTO rule_core(id, section_id, number, content, markup) VALUES (new.id, new.section_id, new.number, new.content, new.markup);
 END;
 
 CREATE TRIGGER on_rule_del INSTEAD OF DELETE ON rule
@@ -150,9 +145,8 @@ BEGIN
         section_id = new.section_id, 
         number = new.number,
         content = new.content, 
-        markup = new.markup, 
-        is_favorite = new.is_favorite 
-    WHERE id = old.id; 
+        markup = new.markup
+    WHERE id = old.id;
 END;
 
 CREATE INDEX number_index ON rule_core (number);

@@ -5,10 +5,10 @@ insertChapter:
 INSERT INTO chapter (part_id, name) VALUES (?, ?);
 
 insertSection:
-INSERT INTO section_core (chapter_id, name, markup, is_favorite) VALUES (?, ?, ?, 0);
+INSERT INTO section_core (chapter_id, name, markup) VALUES (?, ?, ?);
 
 insertRule:
-INSERT INTO rule_core (section_id, number, content, markup, is_favorite) VALUES (?, ?, ?, ?, 0);
+INSERT INTO rule_core (section_id, number, content, markup) VALUES (?, ?, ?, ?);
 
 lastInsertedRowId:
 SELECT last_insert_rowid();
