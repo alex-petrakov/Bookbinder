@@ -142,6 +142,99 @@ class XmlReaderExtensionsTest {
             }
         }
 
+        @Nested
+        @DisplayName("when parsing line breaks")
+        inner class LineBreaksParserTest {
+
+            @Test
+            fun `does not allow non empty line break elements`() {
+                val input = "<test><br>Text</br></test>".byteInputStream()
+                val reader = factory.createXMLEventReader(input).apply {
+                    nextEvent() // Skip the START_DOCUMENT event
+                    nextEvent() // Skip the <test> tag
+                }
+
+                assertThrows<UnexpectedXmlException> {
+                    reader.parseStyledText()
+                }
+            }
+
+            @Test
+            fun `handles normal line breaks`() {
+                val input = "<test><br></br></test>".byteInputStream()
+                val reader = factory.createXMLEventReader(input).apply {
+                    nextEvent() // Skip the START_DOCUMENT event
+                    nextEvent() // Skip the <test> tag
+                }
+
+                val output = reader.parseStyledText()
+
+                assertThat(output).isEqualTo(StyledString("\n"))
+            }
+
+            @Test
+            fun `handles self-closing line breaks`() {
+                val input = "<test><br/></test>".byteInputStream()
+                val reader = factory.createXMLEventReader(input).apply {
+                    nextEvent() // Skip the START_DOCUMENT event
+                    nextEvent() // Skip the <test> tag
+                }
+
+                val output = reader.parseStyledText()
+
+                assertThat(output).isEqualTo(StyledString("\n"))
+            }
+
+            @Test
+            fun `handles line breaks in text`() {
+                val input = "<test>Line1<br/>Line2</test>".byteInputStream()
+                val reader = factory.createXMLEventReader(input).apply {
+                    nextEvent() // Skip the START_DOCUMENT event
+                    nextEvent() // Skip the <test> tag
+                }
+
+                val output = reader.parseStyledText()
+
+                assertThat(output).isEqualTo(StyledString("Line1\nLine2"))
+            }
+
+            @Test
+            fun `handles line breaks within styled text`() {
+                val input = "<test><e>Line1<br/>Line2</e></test>".byteInputStream()
+                val reader = factory.createXMLEventReader(input).apply {
+                    nextEvent() // Skip the START_DOCUMENT event
+                    nextEvent() // Skip the <test> tag
+                }
+
+                val output = reader.parseStyledText()
+
+                assertThat(output).isEqualTo(
+                    StyledString(
+                        "Line1\nLine2",
+                        listOf(CharacterStyle(0, 11, CharacterStyleType.EMPHASIS))
+                    )
+                )
+            }
+
+            @Test
+            fun `handles line breaks within links`() {
+                val input = "<test><l rule=\"1\">Line1<br/>Line2</l></test>".byteInputStream()
+                val reader = factory.createXMLEventReader(input).apply {
+                    nextEvent() // Skip the START_DOCUMENT event
+                    nextEvent() // Skip the <test> tag
+                }
+
+                val output = reader.parseStyledText()
+
+                assertThat(output).isEqualTo(
+                    StyledString(
+                        "Line1\nLine2",
+                        links = listOf(Link(0, 11, 1))
+                    )
+                )
+            }
+        }
+
         @ParameterizedTest
         @ValueSource(strings = [" ", "\n", "Text", "Te xt\nText\n"])
         fun `handles plain text`(plainText: String) {

@@ -25,6 +25,7 @@ private const val ELEMENT_EMPHASIS = "e"
 private const val ELEMENT_STRONG_EMPHASIS = "s"
 private const val ELEMENT_MISSPELL = "m"
 private const val ELEMENT_LINK = "l"
+private const val ELEMENT_LINE_BREAK = "br"
 
 private const val PAR_STYLE_NORMAL = "normal"
 private const val PAR_STYLE_QUOTE = "quote"
@@ -220,7 +221,7 @@ fun XMLEventReader.parseStyledText(): StyledString {
                 links.add(Link(textBuffer.length, textBuffer.length + str.length, ruleId))
                 textBuffer.append(str)
             }
-            element.isCharacters -> textBuffer.append(readText())
+            element.isLineBreak || element.isCharacters -> textBuffer.append(readText())
             else -> throw UnexpectedXmlException("Unexpected styled text element $element", element.location)
         }
     } while (!peek().isEndElement)
@@ -232,6 +233,9 @@ private val XMLEvent.isStyleStart: Boolean
 
 private val XMLEvent.isLinkStart: Boolean
     get() = isStartElement && asStartElement().localName == ELEMENT_LINK
+
+private val XMLEvent.isLineBreak: Boolean
+    get() = isStartElement && asStartElement().localName == ELEMENT_LINE_BREAK
 
 fun XMLEventReader.parseLink(): Pair<String, Int> {
     val element = consumeStartElement(ELEMENT_LINK)
@@ -324,9 +328,29 @@ private fun XMLEventReader.skipWhitespace() {
 }
 
 private fun XMLEventReader.readText(): String {
+    val buffer = StringBuilder()
+    var event = peek()
+    do {
+        when {
+            event.isCharacters -> buffer.append(consumeCharacters())
+            event.isLineBreak -> buffer.append(consumeLineBreak())
+            else -> throw UnexpectedXmlException(
+                "A <$ELEMENT_LINE_BREAK> or text was expected, but it was $event",
+                event.location
+            )
+        }
+        event = peek()
+    } while (event.isCharacters || event.isLineBreak)
+    return buffer.toString()
+}
+
+private fun XMLEventReader.consumeLineBreak(): String {
+    consumeStartElement(ELEMENT_LINE_BREAK)
+    consumeEndElement(ELEMENT_LINE_BREAK)
+    return "\n"
+}
+
+private fun XMLEventReader.consumeCharacters(): String {
     val event = nextEvent()
-    if (!event.isCharacters) {
-        throw UnexpectedXmlException("Text was expected but it was ${event.eventType}", event.location)
-    }
     return event.asCharacters().data
 }
