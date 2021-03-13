@@ -310,29 +310,76 @@ class XmlReaderExtensionsTest {
     inner class RuleParserTest {
 
         @Test
-        fun `handles rules`() {
+        fun `handles rule annotation`() {
             val input = """
-                <rule>
-                    <p>Paragraph 1</p>
-                    <p>Paragraph 2</p>
-                    <p>Paragraph 3</p>
-                </rule>
+                <annotation><e>01</e>23<s>45</s>67<m>89</m></annotation>
             """.trimIndent().byteInputStream()
             val reader = factory.createXMLEventReader(input).apply {
                 nextEvent() // Skip the START_DOCUMENT event
             }
 
-            val output = reader.parseRule()
+            val output = reader.parseRuleAnnotation()
 
             assertThat(output).isEqualTo(
-                Rule(
+                StyledString(
+                    "0123456789",
                     listOf(
-                        Paragraph(StyledString("Paragraph 1")),
-                        Paragraph(StyledString("Paragraph 2")),
-                        Paragraph(StyledString("Paragraph 3"))
+                        CharacterStyle(0, 2, CharacterStyleType.EMPHASIS),
+                        CharacterStyle(4, 6, CharacterStyleType.STRONG_EMPHASIS),
+                        CharacterStyle(8, 10, CharacterStyleType.MISSPELL)
                     )
                 )
             )
+        }
+
+        @Test
+        fun `does not allow empty annotations`() {
+            val input = """
+                <annotation></annotation>
+            """.trimIndent().byteInputStream()
+            val reader = factory.createXMLEventReader(input).apply {
+                nextEvent() // Skip the START_DOCUMENT event
+            }
+
+            assertThrows<UnexpectedXmlException> {
+                reader.parseRuleAnnotation()
+            }
+        }
+
+        @Test
+        fun `handles rule content`() {
+            val input = """
+                <content>
+                    <p>Paragraph 1</p>
+                    <p>Paragraph 2</p>
+                    <p>Paragraph 3</p>
+                </content>
+            """.trimIndent().byteInputStream()
+            val reader = factory.createXMLEventReader(input).apply {
+                nextEvent() // Skip the START_DOCUMENT event
+            }
+
+            val output = reader.parseRuleContent()
+
+            assertThat(output).isEqualTo(
+                listOf(
+                    Paragraph(StyledString("Paragraph 1")),
+                    Paragraph(StyledString("Paragraph 2")),
+                    Paragraph(StyledString("Paragraph 3"))
+                )
+            )
+        }
+
+        @Test
+        fun `does not allow empty content`() {
+            val input = "<content></content>".byteInputStream()
+            val reader = factory.createXMLEventReader(input).apply {
+                nextEvent() // Skip the START_DOCUMENT event
+            }
+
+            assertThrows<UnexpectedXmlException> {
+                reader.parseRuleContent()
+            }
         }
 
         @Test
@@ -348,6 +395,72 @@ class XmlReaderExtensionsTest {
                 reader.parseRule()
             }
         }
+
+        @Test
+        fun `does not allow rules without an annotation`() {
+            val input = """
+                <rule>
+                    <content>
+                        <p>Paragraph 1</p>
+                        <p>Paragraph 2</p>
+                        <p>Paragraph 3</p>
+                    </content>
+                </rule>
+            """.trimIndent().byteInputStream()
+            val reader = factory.createXMLEventReader(input).apply {
+                nextEvent() // Skip the START_DOCUMENT event
+            }
+
+            assertThrows<UnexpectedXmlException> {
+                reader.parseRule()
+            }
+        }
+
+        @Test
+        fun `does not allow rules without content`() {
+            val input = """
+                <rule>
+                    <annotation>Annotation</annotation>
+                </rule>
+            """.trimIndent().byteInputStream()
+            val reader = factory.createXMLEventReader(input).apply {
+                nextEvent() // Skip the START_DOCUMENT event
+            }
+
+            assertThrows<UnexpectedXmlException> {
+                reader.parseRule()
+            }
+        }
+
+        @Test
+        fun `handles rules`() {
+            val input = """
+                <rule>
+                    <annotation>Annotation</annotation>
+                    <content>
+                        <p>Paragraph 1</p>
+                        <p>Paragraph 2</p>
+                        <p>Paragraph 3</p>
+                    </content>
+                </rule>
+            """.trimIndent().byteInputStream()
+            val reader = factory.createXMLEventReader(input).apply {
+                nextEvent() // Skip the START_DOCUMENT event
+            }
+
+            val output = reader.parseRule()
+
+            assertThat(output).isEqualTo(
+                Rule(
+                    StyledString("Annotation"),
+                    listOf(
+                        Paragraph(StyledString("Paragraph 1")),
+                        Paragraph(StyledString("Paragraph 2")),
+                        Paragraph(StyledString("Paragraph 3"))
+                    )
+                )
+            )
+        }
     }
 
     @Nested
@@ -360,7 +473,10 @@ class XmlReaderExtensionsTest {
                 <section>
                     <name>Section 1</name>
                     <rule>
-                        <p>Paragraph 1</p>
+                        <annotation>Annotation</annotation>
+                        <content>
+                            <p>Paragraph 1</p>
+                        </content>
                     </rule>
                 </section>
             """.trimIndent().byteInputStream()
@@ -371,7 +487,7 @@ class XmlReaderExtensionsTest {
             val output = reader.parseSection()
 
             val expectedParagraphs = listOf(Paragraph(StyledString("Paragraph 1")))
-            val expectedRules = listOf(Rule(expectedParagraphs))
+            val expectedRules = listOf(Rule(StyledString("Annotation"), expectedParagraphs))
             assertThat(output).isEqualTo(
                 Section(StyledString("Section 1"), expectedRules)
             )
@@ -382,7 +498,10 @@ class XmlReaderExtensionsTest {
             val input = """
                 <section>
                     <rule>
-                        <p>Paragraph 1</p>
+                        <annotation>Annotation</annotation>
+                        <content>
+                            <p>Paragraph 1</p>
+                        </content>
                     </rule>
                 </section>
             """.trimIndent().byteInputStream()
@@ -401,7 +520,10 @@ class XmlReaderExtensionsTest {
                 <section>
                     <name></name>
                     <rule>
-                        <p>Paragraph 1</p>
+                        <annotation>Annotation</annotation>
+                        <content>
+                            <p>Paragraph 1</p>
+                        </content>
                     </rule>
                 </section>
             """.trimIndent().byteInputStream()
@@ -443,7 +565,10 @@ class XmlReaderExtensionsTest {
                     <section>
                         <name>Section 1</name>
                         <rule>
-                            <p>Paragraph 1</p>
+                            <annotation>Annotation</annotation>
+                            <content>
+                                <p>Paragraph 1</p>
+                            </content>
                         </rule>
                     </section>
                 </chapter>
@@ -455,7 +580,7 @@ class XmlReaderExtensionsTest {
             val output = reader.parseChapter()
 
             val expectedParagraphs = listOf(Paragraph(StyledString("Paragraph 1")))
-            val expectedRules = listOf(Rule(expectedParagraphs))
+            val expectedRules = listOf(Rule(StyledString("Annotation"), expectedParagraphs))
             val expectedSections = listOf(Section(StyledString("Section 1"), expectedRules))
             assertThat(output).isEqualTo(
                 Chapter("Chapter 1", expectedSections)
@@ -469,7 +594,10 @@ class XmlReaderExtensionsTest {
                     <section>
                         <name>Section 1</name>
                         <rule>
-                            <p>Paragraph 1</p>
+                            <annotation>Annotation</annotation>
+                            <content>
+                                <p>Paragraph 1</p>
+                            </content>
                         </rule>
                     </section>
                 </chapter>
@@ -491,7 +619,10 @@ class XmlReaderExtensionsTest {
                     <section>
                         <name>Section 1</name>
                         <rule>
-                            <p>Paragraph 1</p>
+                            <annotation>Annotation</annotation>
+                            <content>
+                                <p>Paragraph 1</p>
+                            </content>
                         </rule>
                     </section>
                 </chapter>
@@ -536,7 +667,10 @@ class XmlReaderExtensionsTest {
                         <section>
                             <name>Section 1</name>
                             <rule>
-                                <p>Paragraph 1</p>
+                                <annotation>Annotation</annotation>
+                                <content>
+                                    <p>Paragraph 1</p>
+                                </content>
                             </rule>
                         </section>
                     </chapter>
@@ -549,7 +683,7 @@ class XmlReaderExtensionsTest {
             val output = reader.parsePart()
 
             val expectedParagraphs = listOf(Paragraph(StyledString("Paragraph 1")))
-            val expectedRules = listOf(Rule(expectedParagraphs))
+            val expectedRules = listOf(Rule(StyledString("Annotation"), expectedParagraphs))
             val expectedSections = listOf(Section(StyledString("Section 1"), expectedRules))
             val expectedChapters = listOf(Chapter("Chapter 1", expectedSections))
             assertThat(output).isEqualTo(
@@ -566,7 +700,10 @@ class XmlReaderExtensionsTest {
                         <section>
                             <name>Section 1</name>
                             <rule>
-                                <p>Paragraph 1</p>
+                                <annotation>Annotation</annotation>
+                                <content>
+                                    <p>Paragraph 1</p>
+                                </content>
                             </rule>
                         </section>
                     </chapter>
@@ -591,7 +728,10 @@ class XmlReaderExtensionsTest {
                         <section>
                             <name>Section 1</name>
                             <rule>
-                                <p>Paragraph 1</p>
+                                <annotation>Annotation</annotation>
+                                <content>
+                                    <p>Paragraph 1</p>
+                                </content>
                             </rule>
                         </section>
                     </chapter>
@@ -639,7 +779,10 @@ class XmlReaderExtensionsTest {
                             <section>
                                 <name>Section 1</name>
                                 <rule>
-                                    <p>Paragraph 1</p>
+                                    <annotation>Annotation</annotation>
+                                    <content>
+                                        <p>Paragraph 1</p>
+                                    </content>
                                 </rule>
                             </section>
                         </chapter>
@@ -651,7 +794,7 @@ class XmlReaderExtensionsTest {
             val output = reader.parseBook()
 
             val expectedParagraphs = listOf(Paragraph(StyledString("Paragraph 1")))
-            val expectedRules = listOf(Rule(expectedParagraphs))
+            val expectedRules = listOf(Rule(StyledString("Annotation"), expectedParagraphs))
             val expectedSections = listOf(Section(StyledString("Section 1"), expectedRules))
             val expectedChapters = listOf(Chapter("Chapter 1", expectedSections))
             val expectedParts = listOf(Part("Part 1", expectedChapters))

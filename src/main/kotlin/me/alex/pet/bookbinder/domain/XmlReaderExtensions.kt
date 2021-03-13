@@ -17,6 +17,8 @@ private const val ELEMENT_PART = "part"
 private const val ELEMENT_CHAPTER = "chapter"
 private const val ELEMENT_SECTION = "section"
 private const val ELEMENT_RULE = "rule"
+private const val ELEMENT_ANNOTATION = "annotation"
+private const val ELEMENT_CONTENT = "content"
 private const val ELEMENT_NAME = "name"
 private const val ELEMENT_PARAGRAPH = "p"
 private const val ELEMENT_EMPHASIS = "e"
@@ -109,13 +111,28 @@ private fun XMLEventReader.parseName(): StyledString {
 
 fun XMLEventReader.parseRule(): Rule {
     consumeStartElement(ELEMENT_RULE)
+    val annotation = parseRuleAnnotation()
+    val paragraphs = parseRuleContent()
+    consumeEndElement(ELEMENT_RULE)
+    return Rule(annotation, paragraphs)
+}
+
+fun XMLEventReader.parseRuleAnnotation(): StyledString {
+    consumeStartElement(ELEMENT_ANNOTATION)
+    val annotation = parseStyledText()
+    consumeEndElement(ELEMENT_ANNOTATION)
+    return annotation
+}
+
+fun XMLEventReader.parseRuleContent(): List<Paragraph> {
+    consumeStartElement(ELEMENT_CONTENT)
     val paragraphs = mutableListOf<Paragraph>()
     do {
         paragraphs.add(parseParagraph())
         skipWhitespace()
     } while (!peek().isEndElement)
-    consumeEndElement(ELEMENT_RULE)
-    return Rule(paragraphs)
+    consumeEndElement(ELEMENT_CONTENT)
+    return paragraphs
 }
 
 fun XMLEventReader.parseParagraph(): Paragraph {

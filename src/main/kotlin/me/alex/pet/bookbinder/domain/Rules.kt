@@ -18,6 +18,7 @@ data class Section(
 )
 
 data class Rule(
+    val annotation: StyledString,
     val paragraphs: List<Paragraph>
 )
 
