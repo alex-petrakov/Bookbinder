@@ -37,8 +37,11 @@ class BookDataStore(private val bookQueries: BookQueries, private val moshi: Mos
     private fun saveRule(rule: Rule, sectionId: Long) {
         val content = rule.paragraphs.toSpannedText()
         val contentStr = content.string
-        val markup = content.toJson().asString(moshi)
-        bookQueries.insertRule(sectionId, nextRuleNumber(), contentStr, markup)
+        val contentMarkup = content.toJson().asString(moshi)
+        val annotation = rule.annotation.toSpannedText()
+        val annotationStr = annotation.string
+        val annotationMarkup = annotation.toJson().asString(moshi)
+        bookQueries.insertRule(sectionId, nextRuleNumber(), annotationStr, annotationMarkup, contentStr, contentMarkup)
     }
 
     private fun resetRuleNumber() {

@@ -94,8 +94,10 @@ CREATE TABLE rule_core (
 	id INTEGER PRIMARY KEY,
 	section_id INTEGER NOT NULL,
 	number INTEGER as Int UNIQUE NOT NULL,
+	annotation TEXT NOT NULL,
+	annotation_markup TEXT NOT NULL,
     content TEXT NOT NULL,
-	markup TEXT NOT NULL,
+	content_markup TEXT NOT NULL,
 	FOREIGN KEY (section_id) REFERENCES section_core(id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
@@ -123,13 +125,16 @@ SELECT
     rule_core.id AS id,
     rule_core.section_id AS section_id,
     rule_core.number AS number,
+    rule_core.annotation AS annotation,
+    rule_core.annotation_markup AS annotation_markup,
     rule_content_fts.content AS content,
-    rule_core.markup AS markup
+    rule_core.content_markup AS content_markup
 FROM rule_core JOIN rule_content_fts ON rule_core.rowid = rule_content_fts.rowid;
 
 CREATE TRIGGER on_rule_insert INSTEAD OF INSERT ON rule
 BEGIN
-	INSERT INTO rule_core(id, section_id, number, content, markup) VALUES (new.id, new.section_id, new.number, new.content, new.markup);
+	INSERT INTO rule_core(id, section_id, number, annotation, annotation_markup, content, content_markup)
+    VALUES (new.id, new.section_id, new.number, new.annotation, new.annotation_markup, new.content, new.content_markup);
 END;
 
 CREATE TRIGGER on_rule_del INSTEAD OF DELETE ON rule
@@ -144,8 +149,10 @@ BEGIN
         id = new.id, 
         section_id = new.section_id, 
         number = new.number,
-        content = new.content, 
-        markup = new.markup
+        annotation = new.annotation,
+        annotation_markup = new.annotation_markup,
+        content = new.content,
+        content_markup = new.content_markup
     WHERE id = old.id;
 END;
 
