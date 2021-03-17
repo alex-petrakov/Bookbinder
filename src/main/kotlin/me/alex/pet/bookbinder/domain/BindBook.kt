@@ -1,6 +1,7 @@
 package me.alex.pet.bookbinder.domain
 
 import com.squareup.moshi.Moshi
+import com.squareup.sqldelight.db.SqlDriver
 import com.squareup.sqldelight.sqlite.driver.JdbcSqliteDriver
 import me.alex.pet.bookbinder.data.BookDataStore
 import me.alex.pet.bookbinder.data.RulesDatabase
@@ -10,10 +11,11 @@ import javax.xml.stream.XMLInputFactory
 
 class BindBook(private val moshi: Moshi = Moshi.Builder().build()) {
 
-    operator fun invoke(inputFile: File, outputFile: File) {
+    operator fun invoke(inputFile: File, outputFile: File, databaseVersion: Long) {
         try {
             require(inputFile.isFile && inputFile.canRead())
             require(!outputFile.exists())
+            require(databaseVersion > 0L)
         } catch (e: SecurityException) {
             throw BindBookException("Access to the input or output file is denied", e)
         }
@@ -29,6 +31,7 @@ class BindBook(private val moshi: Moshi = Moshi.Builder().build()) {
         JdbcSqliteDriver("jdbc:sqlite:${outputFile.absolutePath}").use { driver ->
             RulesDatabase.Schema.create(driver)
             BookDataStore(RulesDatabase(driver).bookQueries, moshi).saveBook(book)
+            driver.setPragmaUserVersion(databaseVersion)
         }
     }
 
@@ -42,6 +45,10 @@ class BindBook(private val moshi: Moshi = Moshi.Builder().build()) {
         } finally {
             xmlReader.close()
         }
+    }
+
+    private fun SqlDriver.setPragmaUserVersion(version: Long) {
+        execute(null, "PRAGMA user_version = $version;", 0)
     }
 
     class BindBookException(message: String, cause: Throwable? = null) : RuntimeException(message, cause)
