@@ -6,10 +6,7 @@ import me.alex.pet.bookbinder.domain.*
 
 class BookDataStore(private val bookQueries: BookQueries, private val moshi: Moshi) {
 
-    private var ruleNumber = 1
-
     fun saveBook(book: Book) = bookQueries.transaction {
-        resetRuleNumber()
         book.forEach { part -> savePart(part) }
     }
 
@@ -41,12 +38,6 @@ class BookDataStore(private val bookQueries: BookQueries, private val moshi: Mos
         val annotation = rule.annotation.toSpannedText()
         val annotationStr = annotation.string
         val annotationMarkup = annotation.toJson().asString(moshi)
-        bookQueries.insertRule(sectionId, nextRuleNumber(), annotationStr, annotationMarkup, contentStr, contentMarkup)
+        bookQueries.insertRule(sectionId, annotationStr, annotationMarkup, contentStr, contentMarkup)
     }
-
-    private fun resetRuleNumber() {
-        ruleNumber = 1
-    }
-
-    private fun nextRuleNumber() = ruleNumber++
 }

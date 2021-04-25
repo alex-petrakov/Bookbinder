@@ -8,8 +8,8 @@ insertSection:
 INSERT INTO section_core (chapter_id, name, markup) VALUES (?, ?, ?);
 
 insertRule:
-INSERT INTO rule_core (section_id, number, annotation, annotation_markup, content, content_markup)
-VALUES (?, ?, ?, ?, ?, ?);
+INSERT INTO rule_core (section_id, annotation, annotation_markup, content, content_markup)
+VALUES (?, ?, ?, ?, ?);
 
 lastInsertedRowId:
 SELECT last_insert_rowid();
