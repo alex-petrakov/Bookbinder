@@ -8,7 +8,7 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
 
 @DisplayName("Spanned text")
-class SpannedTextTest {
+class StyledTextTest {
 
     @Nested
     @DisplayName("when mapping from styled string")
@@ -19,9 +19,9 @@ class SpannedTextTest {
         fun `maps string content`(content: String) {
             val string = StyledString(content)
 
-            val result = string.toSpannedText()
+            val result = string.toStyledText()
 
-            assertThat(result).isEqualTo(SpannedText(content))
+            assertThat(result).isEqualTo(StyledText(content))
         }
 
         @Test
@@ -35,15 +35,15 @@ class SpannedTextTest {
                 )
             )
 
-            val result = string.toSpannedText()
+            val result = string.toStyledText()
 
             assertThat(result).isEqualTo(
-                SpannedText(
+                StyledText(
                     "0123456789",
                     characterSpans = listOf(
-                        CharacterSpan(0, 2, CharacterSpanStyle.EMPHASIS),
-                        CharacterSpan(4, 6, CharacterSpanStyle.STRONG_EMPHASIS),
-                        CharacterSpan(8, 10, CharacterSpanStyle.MISSPELL)
+                        CharacterSpan(0, 2, CharacterAppearance.EMPHASIS),
+                        CharacterSpan(4, 6, CharacterAppearance.STRONG_EMPHASIS),
+                        CharacterSpan(8, 10, CharacterAppearance.MISSPELL)
                     )
                 )
             )
@@ -60,10 +60,10 @@ class SpannedTextTest {
                 )
             )
 
-            val result = string.toSpannedText()
+            val result = string.toStyledText()
 
             assertThat(result).isEqualTo(
-                SpannedText(
+                StyledText(
                     "0123456789",
                     linkSpans = listOf(
                         LinkSpan(0, 2, 1),
@@ -83,9 +83,9 @@ class SpannedTextTest {
         fun `maps empty list`() {
             val paragraphs = emptyList<Paragraph>()
 
-            val styledText = paragraphs.toSpannedText()
+            val styledText = paragraphs.toStyledText()
 
-            assertThat(styledText).isEqualTo(SpannedText(""))
+            assertThat(styledText).isEqualTo(StyledText(""))
         }
 
         @Test
@@ -96,10 +96,10 @@ class SpannedTextTest {
                 Paragraph(StyledString("Paragraph 3"))
             )
 
-            val styledText = paragraphs.toSpannedText("\n\n")
+            val styledText = paragraphs.toStyledText("\n\n")
 
             assertThat(styledText).isEqualTo(
-                SpannedText("Paragraph 1\n\nParagraph 2\n\nParagraph 3\n\n")
+                StyledText("Paragraph 1\n\nParagraph 2\n\nParagraph 3\n\n")
             )
         }
 
@@ -111,16 +111,16 @@ class SpannedTextTest {
                 Paragraph(StyledString("01234567"), indentLevel = 5)
             )
 
-            val styledText = paragraphs.toSpannedText("\n\n")
+            val styledText = paragraphs.toStyledText("\n\n")
 
-            val expectedIndents = listOf(
-                IndentSpan(0, 8, 1),
-                IndentSpan(20, 28, 5)
+            val expectedParagraphSpans = listOf(
+                ParagraphSpan.Indent(0, 8, 1, ""),
+                ParagraphSpan.Indent(20, 28, 5, "")
             )
             assertThat(styledText).isEqualTo(
-                SpannedText(
+                StyledText(
                     "01234567\n\n01234567\n\n01234567\n\n",
-                    indentSpans = expectedIndents
+                    paragraphSpans = expectedParagraphSpans
                 )
             )
         }
@@ -133,16 +133,16 @@ class SpannedTextTest {
                 Paragraph(StyledString("01234567"), style = ParagraphStyle.FOOTNOTE)
             )
 
-            val styledText = paragraphs.toSpannedText("\n\n")
+            val styledText = paragraphs.toStyledText("\n\n")
 
-            val expectedParagraphStyles = listOf(
-                ParagraphSpan(10, 18, ParagraphSpanStyle.QUOTE),
-                ParagraphSpan(20, 28, ParagraphSpanStyle.FOOTNOTE)
+            val expectedParagraphSpans = listOf(
+                ParagraphSpan.Style(10, 18, ParagraphAppearance.QUOTE),
+                ParagraphSpan.Style(20, 28, ParagraphAppearance.FOOTNOTE)
             )
             assertThat(styledText).isEqualTo(
-                SpannedText(
+                StyledText(
                     "01234567\n\n01234567\n\n01234567\n\n",
-                    paragraphSpans = expectedParagraphStyles
+                    paragraphSpans = expectedParagraphSpans
                 )
             )
         }
@@ -164,14 +164,14 @@ class SpannedTextTest {
                 )
             )
 
-            val styledText = paragraphs.toSpannedText("\n\n")
+            val styledText = paragraphs.toStyledText("\n\n")
 
             val expectedCharacterStyles = listOf(
-                CharacterSpan(0, 4, CharacterSpanStyle.EMPHASIS),
-                CharacterSpan(14, 18, CharacterSpanStyle.STRONG_EMPHASIS)
+                CharacterSpan(0, 4, CharacterAppearance.EMPHASIS),
+                CharacterSpan(14, 18, CharacterAppearance.STRONG_EMPHASIS)
             )
             assertThat(styledText).isEqualTo(
-                SpannedText(
+                StyledText(
                     "01234567\n\n01234567\n\n",
                     characterSpans = expectedCharacterStyles
                 )
@@ -195,14 +195,14 @@ class SpannedTextTest {
                 )
             )
 
-            val styledText = paragraphs.toSpannedText("\n\n")
+            val styledText = paragraphs.toStyledText("\n\n")
 
             val expectedLinks = listOf(
                 LinkSpan(0, 4, 1),
                 LinkSpan(14, 18, 2)
             )
             assertThat(styledText).isEqualTo(
-                SpannedText(
+                StyledText(
                     "01234567\n\n01234567\n\n",
                     linkSpans = expectedLinks
                 )

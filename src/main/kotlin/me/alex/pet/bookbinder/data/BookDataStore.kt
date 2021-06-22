@@ -23,7 +23,7 @@ class BookDataStore(private val bookQueries: BookQueries, private val moshi: Mos
     }
 
     private fun saveSection(section: Section, chapterId: Long) {
-        val name = section.name.toSpannedText()
+        val name = section.name.toStyledText()
         val nameStr = name.string
         val markup = name.toJson().asString(moshi)
         bookQueries.insertSection(chapterId, nameStr, markup)
@@ -32,10 +32,10 @@ class BookDataStore(private val bookQueries: BookQueries, private val moshi: Mos
     }
 
     private fun saveRule(rule: Rule, sectionId: Long) {
-        val content = rule.paragraphs.toSpannedText()
+        val content = rule.paragraphs.toStyledText()
         val contentStr = content.string
         val contentMarkup = content.toJson().asString(moshi)
-        val annotation = rule.annotation.toSpannedText()
+        val annotation = rule.annotation.toStyledText()
         val annotationStr = annotation.string
         val annotationMarkup = annotation.toJson().asString(moshi)
         bookQueries.insertRule(sectionId, annotationStr, annotationMarkup, contentStr, contentMarkup)
