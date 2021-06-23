@@ -148,6 +148,28 @@ class StyledTextTest {
         }
 
         @Test
+        fun `maps paragraph hanging text`() {
+            val paragraphs = listOf(
+                Paragraph(StyledString("01234567"), hangingText = "F. "),
+                Paragraph(StyledString("01234567"), hangingText = ""),
+                Paragraph(StyledString("01234567"), innerIndentLevel = 1, hangingText = "1) ")
+            )
+
+            val styledText = paragraphs.toStyledText("\n\n")
+
+            val expectedParagraphSpans = listOf(
+                ParagraphSpan.Indent(0, 8, 0, "F. "),
+                ParagraphSpan.Indent(20, 28, 1, "1) ")
+            )
+            assertThat(styledText).isEqualTo(
+                StyledText(
+                    "01234567\n\n01234567\n\n01234567\n\n",
+                    paragraphSpans = expectedParagraphSpans
+                )
+            )
+        }
+
+        @Test
         fun `maps paragraph styles`() {
             val paragraphs = listOf(
                 Paragraph(StyledString("01234567"), style = ParagraphStyle.NORMAL),
@@ -167,6 +189,33 @@ class StyledTextTest {
             assertThat(styledText).isEqualTo(
                 StyledText(
                     "01234567\n\n01234567\n\n01234567\n\n01234567\n\n",
+                    paragraphSpans = expectedParagraphSpans
+                )
+            )
+        }
+
+        @Test
+        fun `respects paragraph span order`() {
+            val paragraphs = listOf(
+                Paragraph(
+                    StyledString("01234567"),
+                    style = ParagraphStyle.QUOTE,
+                    outerIndentLevel = 1,
+                    innerIndentLevel = 2,
+                    hangingText = "1) "
+                ),
+            )
+
+            val styledText = paragraphs.toStyledText("\n\n")
+
+            val expectedParagraphSpans = listOf(
+                ParagraphSpan.Indent(0, 8, 1, ""),
+                ParagraphSpan.Style(0, 8, ParagraphAppearance.QUOTE),
+                ParagraphSpan.Indent(0, 8, 2, "1) ")
+            )
+            assertThat(styledText).isEqualTo(
+                StyledText(
+                    "01234567\n\n",
                     paragraphSpans = expectedParagraphSpans
                 )
             )

@@ -311,7 +311,13 @@ class XmlReaderExtensionsTest {
             val output = reader.parseParagraph()
 
             assertThat(output).isEqualTo(
-                Paragraph(StyledString("Paragraph content"), ParagraphStyle.NORMAL, 0)
+                Paragraph(
+                    StyledString("Paragraph content"),
+                    ParagraphStyle.NORMAL,
+                    0,
+                    0,
+                    ""
+                )
             )
         }
 
@@ -437,6 +443,21 @@ class XmlReaderExtensionsTest {
             assertThrows<UnexpectedXmlException> {
                 reader.parseParagraph()
             }
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = ["", "1. ", "1) ", "f) "])
+        fun `handles hanging text`(hangingText: String) {
+            val input = "<p hangingText=\"$hangingText\">Paragraph content</p>".byteInputStream()
+            val reader = factory.createXMLEventReader(input).apply {
+                nextEvent() // Skip the START_DOCUMENT event
+            }
+
+            val output = reader.parseParagraph()
+
+            assertThat(output).isEqualTo(
+                Paragraph(StyledString("Paragraph content"), hangingText = hangingText)
+            )
         }
     }
 

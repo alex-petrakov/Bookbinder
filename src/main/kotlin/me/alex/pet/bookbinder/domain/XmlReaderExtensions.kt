@@ -4,6 +4,7 @@ import javax.xml.namespace.QName
 import javax.xml.stream.Location
 import javax.xml.stream.XMLEventReader
 import javax.xml.stream.XMLStreamException
+import javax.xml.stream.events.Attribute
 import javax.xml.stream.events.EndElement
 import javax.xml.stream.events.StartElement
 import javax.xml.stream.events.XMLEvent
@@ -11,6 +12,7 @@ import javax.xml.stream.events.XMLEvent
 private const val ATTR_STYLE = "style"
 private const val ATTR_OUTER_INDENT = "outerIndent"
 private const val ATTR_INNER_INDENT = "innerIndent"
+private const val ATTR_HANGING_TEXT = "hangingText"
 private const val ATTR_RULE = "rule"
 
 private const val ELEMENT_BOOK = "book"
@@ -156,12 +158,13 @@ fun XMLEventReader.parseParagraph(): Paragraph {
     } catch (e: IllegalAttributeValue) {
         throw UnexpectedXmlException("Illegal indent level", startElement.location, e)
     }
+    val hangingText = startElement.getHangingText()
 
     val paragraphContent = parseStyledText()
 
     consumeEndElement(ELEMENT_PARAGRAPH)
 
-    return Paragraph(paragraphContent, paragraphStyle, outerIndentLevel, innerIndentLevel)
+    return Paragraph(paragraphContent, paragraphStyle, outerIndentLevel, innerIndentLevel, hangingText)
 }
 
 private fun StartElement.getParagraphStyle(): ParagraphStyle {
@@ -182,6 +185,10 @@ private fun StartElement.getIndentLevel(attributeName: String): Int {
     return indentLevel
 }
 
+private fun StartElement.getHangingText(): String {
+    return getAttributeByName(ATTR_HANGING_TEXT)?.value ?: ""
+}
+
 private fun StartElement.getReferencedRuleId(): Int {
     val attr = getAttributeByName(ATTR_RULE) ?: throw MissingAttribute(
         "Missing attribute '$ATTR_RULE'"
@@ -194,7 +201,7 @@ private fun StartElement.getReferencedRuleId(): Int {
     return ruleId
 }
 
-private fun StartElement.getAttributeByName(name: String) = getAttributeByName(QName.valueOf(name))
+private fun StartElement.getAttributeByName(name: String): Attribute? = getAttributeByName(QName.valueOf(name))
 
 private fun checkAttribute(value: Boolean, message: () -> String = { "Illegal attribute value $value" }) {
     if (!value) {

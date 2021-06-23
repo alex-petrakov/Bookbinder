@@ -174,11 +174,11 @@ private fun Paragraph.toOuterIndentSpan(offset: Int): ParagraphSpan.Indent? {
 
 private fun Paragraph.toInnerIndentSpan(offset: Int): ParagraphSpan.Indent? {
     return when {
-        innerIndentLevel > 0 -> ParagraphSpan.Indent(
+        innerIndentLevel > 0 || hangingText.isNotEmpty() -> ParagraphSpan.Indent(
             offset,
             offset + content.string.length,
             innerIndentLevel,
-            ""
+            hangingText
         )
         else -> null
     }
