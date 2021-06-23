@@ -372,7 +372,7 @@ class XmlReaderExtensionsTest {
         @ParameterizedTest
         @ValueSource(ints = [0, 1, 2, 3, 4, 5])
         fun `handles indents`(indent: Int) {
-            val input = "<p indent=\"$indent\">Paragraph content</p>".byteInputStream()
+            val input = "<p outerIndent=\"$indent\">Paragraph content</p>".byteInputStream()
             val reader = factory.createXMLEventReader(input).apply {
                 nextEvent() // Skip the START_DOCUMENT event
             }
@@ -380,14 +380,14 @@ class XmlReaderExtensionsTest {
             val output = reader.parseParagraph()
 
             assertThat(output).isEqualTo(
-                Paragraph(StyledString("Paragraph content"), indentLevel = indent)
+                Paragraph(StyledString("Paragraph content"), outerIndentLevel = indent)
             )
         }
 
         @ParameterizedTest
         @ValueSource(ints = [-10, -2, -1, 6, 7, 10])
         fun `does not allow incorrect indents`(indent: Int) {
-            val input = "<p indent=\"$indent\">Paragraph content</p>".byteInputStream()
+            val input = "<p outerIndent=\"$indent\">Paragraph content</p>".byteInputStream()
             val reader = factory.createXMLEventReader(input).apply {
                 nextEvent() // Skip the START_DOCUMENT event
             }

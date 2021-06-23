@@ -9,7 +9,7 @@ import javax.xml.stream.events.StartElement
 import javax.xml.stream.events.XMLEvent
 
 private const val ATTR_STYLE = "style"
-private const val ATTR_INDENT = "indent"
+private const val ATTR_OUTER_INDENT = "outerIndent"
 private const val ATTR_RULE = "rule"
 
 private const val ELEMENT_BOOK = "book"
@@ -165,12 +165,12 @@ private fun StartElement.getParagraphStyle(): ParagraphStyle {
 }
 
 private fun StartElement.getIndentLevel(): Int {
-    val attrStringValue = getAttributeByName(ATTR_INDENT)?.value ?: "0"
+    val attrStringValue = getAttributeByName(ATTR_OUTER_INDENT)?.value ?: "0"
     val indentLevel = attrStringValue.toIntOrNull() ?: throw IllegalAttributeValue(
-        "Illegal '$ATTR_INDENT' attribute value $attrStringValue, it must be an integer"
+        "Illegal '$ATTR_OUTER_INDENT' attribute value $attrStringValue, it must be an integer"
     )
     checkAttribute(indentLevel in 0..5) {
-        "Illegal '$ATTR_INDENT' attribute value $indentLevel, it must be in [0..5]"
+        "Illegal '$ATTR_OUTER_INDENT' attribute value $indentLevel, it must be in [0..5]"
     }
     return indentLevel
 }

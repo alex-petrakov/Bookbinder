@@ -157,7 +157,14 @@ private fun Paragraph.toParagraphSpans(offset: Int): List<ParagraphSpan.Style> {
 
 private fun Paragraph.toIndentSpans(offset: Int): List<ParagraphSpan.Indent> {
     return when {
-        indentLevel > 0 -> listOf(ParagraphSpan.Indent(offset, offset + content.string.length, indentLevel, ""))
+        outerIndentLevel > 0 -> listOf(
+            ParagraphSpan.Indent(
+                offset,
+                offset + content.string.length,
+                outerIndentLevel,
+                ""
+            )
+        )
         else -> emptyList()
     }
 }

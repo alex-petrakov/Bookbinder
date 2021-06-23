@@ -106,9 +106,9 @@ class StyledTextTest {
         @Test
         fun `maps paragraph indents`() {
             val paragraphs = listOf(
-                Paragraph(StyledString("01234567"), indentLevel = 1),
-                Paragraph(StyledString("01234567"), indentLevel = 0),
-                Paragraph(StyledString("01234567"), indentLevel = 5)
+                Paragraph(StyledString("01234567"), outerIndentLevel = 1),
+                Paragraph(StyledString("01234567"), outerIndentLevel = 0),
+                Paragraph(StyledString("01234567"), outerIndentLevel = 5)
             )
 
             val styledText = paragraphs.toStyledText("\n\n")
