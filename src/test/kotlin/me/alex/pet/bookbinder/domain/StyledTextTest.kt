@@ -104,11 +104,33 @@ class StyledTextTest {
         }
 
         @Test
-        fun `maps paragraph indents`() {
+        fun `maps paragraph outer indents`() {
             val paragraphs = listOf(
                 Paragraph(StyledString("01234567"), outerIndentLevel = 1),
                 Paragraph(StyledString("01234567"), outerIndentLevel = 0),
                 Paragraph(StyledString("01234567"), outerIndentLevel = 5)
+            )
+
+            val styledText = paragraphs.toStyledText("\n\n")
+
+            val expectedParagraphSpans = listOf(
+                ParagraphSpan.Indent(0, 8, 1, ""),
+                ParagraphSpan.Indent(20, 28, 5, "")
+            )
+            assertThat(styledText).isEqualTo(
+                StyledText(
+                    "01234567\n\n01234567\n\n01234567\n\n",
+                    paragraphSpans = expectedParagraphSpans
+                )
+            )
+        }
+
+        @Test
+        fun `maps paragraph inner indents`() {
+            val paragraphs = listOf(
+                Paragraph(StyledString("01234567"), innerIndentLevel = 1),
+                Paragraph(StyledString("01234567"), innerIndentLevel = 0),
+                Paragraph(StyledString("01234567"), innerIndentLevel = 5)
             )
 
             val styledText = paragraphs.toStyledText("\n\n")

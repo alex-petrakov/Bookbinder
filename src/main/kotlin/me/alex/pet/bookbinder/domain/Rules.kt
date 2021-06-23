@@ -25,7 +25,8 @@ data class Rule(
 data class Paragraph(
     val content: StyledString,
     val style: ParagraphStyle = ParagraphStyle.NORMAL,
-    val outerIndentLevel: Int = 0
+    val outerIndentLevel: Int = 0,
+    val innerIndentLevel: Int = 0
 )
 
 enum class ParagraphStyle {

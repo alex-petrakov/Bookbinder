@@ -10,6 +10,7 @@ import javax.xml.stream.events.XMLEvent
 
 private const val ATTR_STYLE = "style"
 private const val ATTR_OUTER_INDENT = "outerIndent"
+private const val ATTR_INNER_INDENT = "innerIndent"
 private const val ATTR_RULE = "rule"
 
 private const val ELEMENT_BOOK = "book"
@@ -145,8 +146,13 @@ fun XMLEventReader.parseParagraph(): Paragraph {
     } catch (e: IllegalAttributeValue) {
         throw UnexpectedXmlException("Illegal paragraph style", startElement.location, e)
     }
-    val paragraphIndentLevel = try {
-        startElement.getIndentLevel()
+    val outerIndentLevel = try {
+        startElement.getIndentLevel(ATTR_OUTER_INDENT)
+    } catch (e: IllegalAttributeValue) {
+        throw UnexpectedXmlException("Illegal indent level", startElement.location, e)
+    }
+    val innerIndentLevel = try {
+        startElement.getIndentLevel(ATTR_INNER_INDENT)
     } catch (e: IllegalAttributeValue) {
         throw UnexpectedXmlException("Illegal indent level", startElement.location, e)
     }
@@ -155,7 +161,7 @@ fun XMLEventReader.parseParagraph(): Paragraph {
 
     consumeEndElement(ELEMENT_PARAGRAPH)
 
-    return Paragraph(paragraphContent, paragraphStyle, paragraphIndentLevel)
+    return Paragraph(paragraphContent, paragraphStyle, outerIndentLevel, innerIndentLevel)
 }
 
 private fun StartElement.getParagraphStyle(): ParagraphStyle {
@@ -165,13 +171,13 @@ private fun StartElement.getParagraphStyle(): ParagraphStyle {
     )
 }
 
-private fun StartElement.getIndentLevel(): Int {
-    val attrStringValue = getAttributeByName(ATTR_OUTER_INDENT)?.value ?: "0"
+private fun StartElement.getIndentLevel(attributeName: String): Int {
+    val attrStringValue = getAttributeByName(attributeName)?.value ?: "0"
     val indentLevel = attrStringValue.toIntOrNull() ?: throw IllegalAttributeValue(
-        "Illegal '$ATTR_OUTER_INDENT' attribute value $attrStringValue, it must be an integer"
+        "Illegal '$attributeName' attribute value $attrStringValue, it must be an integer"
     )
     checkAttribute(indentLevel in 0..5) {
-        "Illegal '$ATTR_OUTER_INDENT' attribute value $indentLevel, it must be in [0..5]"
+        "Illegal '$attributeName' attribute value $indentLevel, it must be in [0..5]"
     }
     return indentLevel
 }

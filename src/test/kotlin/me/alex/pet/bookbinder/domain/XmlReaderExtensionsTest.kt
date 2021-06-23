@@ -385,7 +385,7 @@ class XmlReaderExtensionsTest {
 
         @ParameterizedTest
         @ValueSource(ints = [0, 1, 2, 3, 4, 5])
-        fun `handles indents`(indent: Int) {
+        fun `handles outer indents`(indent: Int) {
             val input = "<p outerIndent=\"$indent\">Paragraph content</p>".byteInputStream()
             val reader = factory.createXMLEventReader(input).apply {
                 nextEvent() // Skip the START_DOCUMENT event
@@ -400,8 +400,36 @@ class XmlReaderExtensionsTest {
 
         @ParameterizedTest
         @ValueSource(ints = [-10, -2, -1, 6, 7, 10])
-        fun `does not allow incorrect indents`(indent: Int) {
+        fun `does not allow incorrect outer indents`(indent: Int) {
             val input = "<p outerIndent=\"$indent\">Paragraph content</p>".byteInputStream()
+            val reader = factory.createXMLEventReader(input).apply {
+                nextEvent() // Skip the START_DOCUMENT event
+            }
+
+            assertThrows<UnexpectedXmlException> {
+                reader.parseParagraph()
+            }
+        }
+
+        @ParameterizedTest
+        @ValueSource(ints = [0, 1, 2, 3, 4, 5])
+        fun `handles inner indents`(indent: Int) {
+            val input = "<p innerIndent=\"$indent\">Paragraph content</p>".byteInputStream()
+            val reader = factory.createXMLEventReader(input).apply {
+                nextEvent() // Skip the START_DOCUMENT event
+            }
+
+            val output = reader.parseParagraph()
+
+            assertThat(output).isEqualTo(
+                Paragraph(StyledString("Paragraph content"), innerIndentLevel = indent)
+            )
+        }
+
+        @ParameterizedTest
+        @ValueSource(ints = [-10, -2, -1, 6, 7, 10])
+        fun `does not allow incorrect inner indents`(indent: Int) {
+            val input = "<p innerIndent=\"$indent\">Paragraph content</p>".byteInputStream()
             val reader = factory.createXMLEventReader(input).apply {
                 nextEvent() // Skip the START_DOCUMENT event
             }

@@ -116,14 +116,12 @@ private fun CharacterStyle.toCharacterSpan(offset: Int = 0): CharacterSpan {
 
 fun List<Paragraph>.toStyledText(paragraphDelimiter: String = "\n\n"): StyledText {
     val textBuffer = StringBuilder()
-    val allIndentSpans = mutableListOf<ParagraphSpan.Indent>()
-    val allParagraphStyleSpans = mutableListOf<ParagraphSpan.Style>()
+    val allParagraphSpans = mutableListOf<ParagraphSpan>()
     val allCharacterSpans = mutableListOf<CharacterSpan>()
     val allLinkSpans = mutableListOf<LinkSpan>()
 
     forEach { paragraph ->
-        allIndentSpans.addAll(paragraph.toIndentSpans(textBuffer.length))
-        allParagraphStyleSpans.addAll(paragraph.toParagraphSpans(textBuffer.length))
+        allParagraphSpans.addAll(paragraph.toParagraphSpans(textBuffer.length))
 
         val (paragraphText, styles, links) = paragraph.content
         val linkSpans = links.map { it.toLinkSpan(textBuffer.length) }
@@ -137,13 +135,20 @@ fun List<Paragraph>.toStyledText(paragraphDelimiter: String = "\n\n"): StyledTex
 
     return StyledText(
         textBuffer.toString(),
-        allIndentSpans + allParagraphStyleSpans,
+        allParagraphSpans,
         allCharacterSpans,
         allLinkSpans
     )
 }
 
-private fun Paragraph.toParagraphSpans(offset: Int): List<ParagraphSpan.Style> {
+private fun Paragraph.toParagraphSpans(offset: Int): List<ParagraphSpan> {
+    val outerIndent = toOuterIndentSpan(offset)
+    val styles = toStyleSpans(offset)
+    val innerIndent = toInnerIndentSpan(offset)
+    return listOfNotNull(outerIndent) + styles + listOfNotNull(innerIndent)
+}
+
+private fun Paragraph.toStyleSpans(offset: Int): List<ParagraphSpan.Style> {
     val appearanceList = when (style) {
         ParagraphStyle.NORMAL -> emptyList()
         ParagraphStyle.QUOTE -> listOf(ParagraphAppearance.QUOTE)
@@ -155,16 +160,26 @@ private fun Paragraph.toParagraphSpans(offset: Int): List<ParagraphSpan.Style> {
     }
 }
 
-private fun Paragraph.toIndentSpans(offset: Int): List<ParagraphSpan.Indent> {
+private fun Paragraph.toOuterIndentSpan(offset: Int): ParagraphSpan.Indent? {
     return when {
-        outerIndentLevel > 0 -> listOf(
-            ParagraphSpan.Indent(
-                offset,
-                offset + content.string.length,
-                outerIndentLevel,
-                ""
-            )
+        outerIndentLevel > 0 -> ParagraphSpan.Indent(
+            offset,
+            offset + content.string.length,
+            outerIndentLevel,
+            ""
         )
-        else -> emptyList()
+        else -> null
+    }
+}
+
+private fun Paragraph.toInnerIndentSpan(offset: Int): ParagraphSpan.Indent? {
+    return when {
+        innerIndentLevel > 0 -> ParagraphSpan.Indent(
+            offset,
+            offset + content.string.length,
+            innerIndentLevel,
+            ""
+        )
+        else -> null
     }
 }
