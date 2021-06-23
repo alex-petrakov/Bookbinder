@@ -144,14 +144,14 @@ fun List<Paragraph>.toStyledText(paragraphDelimiter: String = "\n\n"): StyledTex
 }
 
 private fun Paragraph.toParagraphSpans(offset: Int): List<ParagraphSpan.Style> {
-    val spanStyle = when (style) {
-        ParagraphStyle.NORMAL -> null
-        ParagraphStyle.QUOTE -> ParagraphAppearance.QUOTE
-        ParagraphStyle.FOOTNOTE -> ParagraphAppearance.FOOTNOTE
+    val appearanceList = when (style) {
+        ParagraphStyle.NORMAL -> emptyList()
+        ParagraphStyle.QUOTE -> listOf(ParagraphAppearance.QUOTE)
+        ParagraphStyle.FOOTNOTE -> listOf(ParagraphAppearance.FOOTNOTE)
+        ParagraphStyle.FOOTNOTE_QUOTE -> listOf(ParagraphAppearance.FOOTNOTE, ParagraphAppearance.QUOTE)
     }
-    return when (spanStyle) {
-        null -> emptyList()
-        else -> listOf(ParagraphSpan.Style(offset, offset + content.string.length, spanStyle))
+    return appearanceList.map { appearance ->
+        ParagraphSpan.Style(offset, offset + content.string.length, appearance)
     }
 }
 

@@ -30,6 +30,7 @@ private const val ELEMENT_LINE_BREAK = "br"
 private const val PAR_STYLE_NORMAL = "normal"
 private const val PAR_STYLE_QUOTE = "quote"
 private const val PAR_STYLE_FOOTNOTE = "footnote"
+private const val PAR_STYLE_FOOTNOTE_QUOTE = "footnoteQuote"
 
 private val tagsToStyles = mapOf(
     ELEMENT_EMPHASIS to CharacterStyleType.EMPHASIS,
@@ -200,6 +201,7 @@ private fun paragraphStyleOf(str: String): ParagraphStyle? {
         PAR_STYLE_NORMAL -> ParagraphStyle.NORMAL
         PAR_STYLE_QUOTE -> ParagraphStyle.QUOTE
         PAR_STYLE_FOOTNOTE -> ParagraphStyle.FOOTNOTE
+        PAR_STYLE_FOOTNOTE_QUOTE -> ParagraphStyle.FOOTNOTE_QUOTE
         else -> null
     }
 }

@@ -130,18 +130,21 @@ class StyledTextTest {
             val paragraphs = listOf(
                 Paragraph(StyledString("01234567"), style = ParagraphStyle.NORMAL),
                 Paragraph(StyledString("01234567"), style = ParagraphStyle.QUOTE),
-                Paragraph(StyledString("01234567"), style = ParagraphStyle.FOOTNOTE)
+                Paragraph(StyledString("01234567"), style = ParagraphStyle.FOOTNOTE),
+                Paragraph(StyledString("01234567"), style = ParagraphStyle.FOOTNOTE_QUOTE)
             )
 
             val styledText = paragraphs.toStyledText("\n\n")
 
             val expectedParagraphSpans = listOf(
                 ParagraphSpan.Style(10, 18, ParagraphAppearance.QUOTE),
-                ParagraphSpan.Style(20, 28, ParagraphAppearance.FOOTNOTE)
+                ParagraphSpan.Style(20, 28, ParagraphAppearance.FOOTNOTE),
+                ParagraphSpan.Style(30, 38, ParagraphAppearance.FOOTNOTE),
+                ParagraphSpan.Style(30, 38, ParagraphAppearance.QUOTE)
             )
             assertThat(styledText).isEqualTo(
                 StyledText(
-                    "01234567\n\n01234567\n\n01234567\n\n",
+                    "01234567\n\n01234567\n\n01234567\n\n01234567\n\n",
                     paragraphSpans = expectedParagraphSpans
                 )
             )

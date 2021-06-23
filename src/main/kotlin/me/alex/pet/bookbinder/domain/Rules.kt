@@ -31,7 +31,8 @@ data class Paragraph(
 enum class ParagraphStyle {
     NORMAL,
     QUOTE,
-    FOOTNOTE
+    FOOTNOTE,
+    FOOTNOTE_QUOTE
 }
 
 data class StyledString(

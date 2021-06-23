@@ -358,6 +358,20 @@ class XmlReaderExtensionsTest {
         }
 
         @Test
+        fun `handles footnote quote style`() {
+            val input = "<p style=\"footnoteQuote\">Paragraph content</p>".byteInputStream()
+            val reader = factory.createXMLEventReader(input).apply {
+                nextEvent() // Skip the START_DOCUMENT event
+            }
+
+            val output = reader.parseParagraph()
+
+            assertThat(output).isEqualTo(
+                Paragraph(StyledString("Paragraph content"), ParagraphStyle.FOOTNOTE_QUOTE)
+            )
+        }
+
+        @Test
         fun `does not allow unknown styles`() {
             val input = "<p style=\"some_unknown_style\">Paragraph content</p>".byteInputStream()
             val reader = factory.createXMLEventReader(input).apply {
