@@ -32,7 +32,9 @@ class BookDataStore(private val bookQueries: BookQueries, private val moshi: Mos
     }
 
     private fun saveRule(rule: Rule, sectionId: Long) {
-        val content = rule.paragraphs.toStyledText()
+        val content = rule.paragraphs
+            .splitWithBlankLines()
+            .toStyledText()
         val contentStr = content.string
         val contentMarkup = content.toJson().asString(moshi)
         val annotation = rule.annotation.toStyledText()

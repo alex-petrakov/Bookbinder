@@ -6,41 +6,31 @@ import me.alex.pet.bookbinder.domain.*
 
 @JsonClass(generateAdapter = true)
 data class MarkupDto(
-    val paragraphSpans: ParagraphSpansDto,
+    val paragraphSpans: List<ParagraphSpanDto>,
     val characterSpans: List<CharacterSpanDto>,
     val linkSpans: List<LinkSpanDto>
 )
 
 @JsonClass(generateAdapter = true)
-data class ParagraphSpansDto(
-    val indents: List<IndentSpanDto>,
-    val styles: List<ParagraphStyleDto>
-)
-
-interface Sortable {
-    val globalOrder: Int
-}
-
-@JsonClass(generateAdapter = true)
-data class IndentSpanDto(
-    val start: Int,
-    val end: Int,
-    val level: Int,
-    val hangingText: String,
-    override val globalOrder: Int
-) : Sortable
-
-@JsonClass(generateAdapter = true)
-data class ParagraphStyleDto(
+data class ParagraphSpanDto(
     val start: Int,
     val end: Int,
     val appearance: ParagraphAppearanceDto,
-    override val globalOrder: Int
-) : Sortable
+    val indent: IndentDto
+)
+
+@JsonClass(generateAdapter = true)
+data class IndentDto(
+    val outer: Int,
+    val inner: Int,
+    val hangingText: String
+)
 
 enum class ParagraphAppearanceDto {
+    NORMAL,
+    FOOTNOTE,
     QUOTE,
-    FOOTNOTE
+    FOOTNOTE_QUOTE
 }
 
 @JsonClass(generateAdapter = true)
@@ -71,35 +61,27 @@ fun MarkupDto.asString(moshi: Moshi): String {
 
 fun StyledText.toJson(): MarkupDto {
     return MarkupDto(
-        paragraphSpans.toJson(),
+        paragraphSpans.map { it.toJson() },
         characterSpans.map { it.toJson() },
         linkSpans.map { it.toJson() }
     )
 }
 
-private fun List<ParagraphSpan>.toJson(): ParagraphSpansDto {
-    val allSpans = this.withIndex()
-    val indents = mutableListOf<IndentSpanDto>()
-    val styles = mutableListOf<ParagraphStyleDto>()
-    for ((index, span) in allSpans) {
-        when (span) {
-            is ParagraphSpan.Indent -> indents.add(span.toJson(index))
-            is ParagraphSpan.Style -> styles.add(span.toJson(index))
-        }
-    }
-    return ParagraphSpansDto(indents.toList(), styles.toList())
+private fun ParagraphSpan.toJson(): ParagraphSpanDto {
+    return ParagraphSpanDto(start, end, appearance.toJson(), indent.toJson())
 }
 
-private fun ParagraphSpan.Style.toJson(index: Int): ParagraphStyleDto {
-    val appearance = when (this.appearance) {
-        ParagraphAppearance.QUOTE -> ParagraphAppearanceDto.QUOTE
+private fun ParagraphAppearance.toJson(): ParagraphAppearanceDto {
+    return when (this) {
+        ParagraphAppearance.NORMAL -> ParagraphAppearanceDto.NORMAL
         ParagraphAppearance.FOOTNOTE -> ParagraphAppearanceDto.FOOTNOTE
+        ParagraphAppearance.QUOTE -> ParagraphAppearanceDto.QUOTE
+        ParagraphAppearance.FOOTNOTE_QUOTE -> ParagraphAppearanceDto.FOOTNOTE_QUOTE
     }
-    return ParagraphStyleDto(start, end, appearance, index)
 }
 
-private fun ParagraphSpan.Indent.toJson(index: Int): IndentSpanDto {
-    return IndentSpanDto(start, end, level, hangingText, index)
+private fun Indent.toJson(): IndentDto {
+    return IndentDto(outer, inner, hangingText)
 }
 
 private fun CharacterSpan.toJson(): CharacterSpanDto {

@@ -7,83 +7,30 @@ data class StyledText(
     val linkSpans: List<LinkSpan> = emptyList()
 )
 
-sealed class ParagraphSpan(val start: Int, val end: Int) {
-
+data class ParagraphSpan(
+    val start: Int,
+    val end: Int,
+    val appearance: ParagraphAppearance,
+    val indent: Indent
+) {
     init {
         require(start >= 0)
         require(end > start)
     }
+}
 
-    class Indent(start: Int, end: Int, val level: Int, val hangingText: String) : ParagraphSpan(start, end) {
-        init {
-            require(level >= 0)
-        }
-
-        override fun equals(other: Any?): Boolean {
-            if (this === other) return true
-            if (other !is Indent) return false
-            if (!super.equals(other)) return false
-
-            if (level != other.level) return false
-            if (hangingText != other.hangingText) return false
-
-            return true
-        }
-
-        override fun hashCode(): Int {
-            var result = super.hashCode()
-            result = 31 * result + level
-            result = 31 * result + hangingText.hashCode()
-            return result
-        }
-
-        override fun toString(): String {
-            return "Indent(start=$start, end=$end, level=$level, hangingText='$hangingText')"
-        }
-    }
-
-    class Style(start: Int, end: Int, val appearance: ParagraphAppearance) : ParagraphSpan(start, end) {
-        override fun equals(other: Any?): Boolean {
-            if (this === other) return true
-            if (other !is Style) return false
-            if (!super.equals(other)) return false
-
-            if (appearance != other.appearance) return false
-
-            return true
-        }
-
-        override fun hashCode(): Int {
-            var result = super.hashCode()
-            result = 31 * result + appearance.hashCode()
-            return result
-        }
-
-        override fun toString(): String {
-            return "Style(start=$start, end=$end, appearance=$appearance)"
-        }
-    }
-
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (other !is ParagraphSpan) return false
-
-        if (start != other.start) return false
-        if (end != other.end) return false
-
-        return true
-    }
-
-    override fun hashCode(): Int {
-        var result = start
-        result = 31 * result + end
-        return result
+data class Indent(val outer: Int, val inner: Int, val hangingText: String) {
+    init {
+        require(outer >= 0)
+        require(inner >= 0)
     }
 }
 
 enum class ParagraphAppearance {
+    NORMAL,
+    FOOTNOTE,
     QUOTE,
-    FOOTNOTE
+    FOOTNOTE_QUOTE
 }
 
 data class CharacterSpan(val start: Int, val end: Int, val appearance: CharacterAppearance)
@@ -98,88 +45,76 @@ data class LinkSpan(val start: Int, val end: Int, val ruleId: Int)
 
 
 fun StyledString.toStyledText(): StyledText {
-    val linkSpans = links.map { it.toLinkSpan() }
-    val characterSpans = styles.map { it.toCharacterSpan() }
-    return StyledText(this.string, characterSpans = characterSpans, linkSpans = linkSpans)
+    return StyledText(this.string, characterSpans = toCharacterSpans(), linkSpans = toLinkSpans())
 }
 
-private fun Link.toLinkSpan(offset: Int = 0) = LinkSpan(offset + start, offset + end, ruleId)
-
-private fun CharacterStyle.toCharacterSpan(offset: Int = 0): CharacterSpan {
-    val style = when (styleType) {
-        CharacterStyleType.EMPHASIS -> CharacterAppearance.EMPHASIS
-        CharacterStyleType.STRONG_EMPHASIS -> CharacterAppearance.STRONG_EMPHASIS
-        CharacterStyleType.MISSPELL -> CharacterAppearance.MISSPELL
+private fun StyledString.toLinkSpans(paragraphOffset: Int = 0): List<LinkSpan> {
+    return links.map { link ->
+        LinkSpan(paragraphOffset + link.start, paragraphOffset + link.end, link.ruleId)
     }
-    return CharacterSpan(offset + start, offset + end, style)
 }
 
-fun List<Paragraph>.toStyledText(paragraphDelimiter: String = "\n\n"): StyledText {
+private fun StyledString.toCharacterSpans(paragraphOffset: Int = 0): List<CharacterSpan> {
+    return styles.map { style ->
+        val appearance = when (style.styleType) {
+            CharacterStyleType.EMPHASIS -> CharacterAppearance.EMPHASIS
+            CharacterStyleType.STRONG_EMPHASIS -> CharacterAppearance.STRONG_EMPHASIS
+            CharacterStyleType.MISSPELL -> CharacterAppearance.MISSPELL
+        }
+        CharacterSpan(paragraphOffset + style.start, paragraphOffset + style.end, appearance)
+    }
+}
+
+fun List<Paragraph>.splitWithBlankLines(): List<Paragraph> {
+    if (this.isEmpty()) return emptyList()
+    return this.zipWithNext { current, next ->
+        val blankLineStyle = getIntermediateLineStyle(current.style, next.style)
+        val blankLine = Paragraph(
+            StyledString(""),
+            blankLineStyle,
+            current.outerIndentLevel,
+            current.innerIndentLevel,
+            ""
+        )
+        listOf(current, blankLine)
+    }.flatten() + this.last()
+}
+
+private fun getIntermediateLineStyle(first: ParagraphStyle, second: ParagraphStyle): ParagraphStyle {
+    return if (first == second) {
+        first
+    } else if (first == ParagraphStyle.FOOTNOTE && second == ParagraphStyle.FOOTNOTE_QUOTE) {
+        ParagraphStyle.FOOTNOTE
+    } else if (first == ParagraphStyle.FOOTNOTE_QUOTE && second == ParagraphStyle.FOOTNOTE) {
+        ParagraphStyle.FOOTNOTE
+    } else {
+        ParagraphStyle.NORMAL
+    }
+}
+
+fun List<Paragraph>.toStyledText(): StyledText {
     val textBuffer = StringBuilder()
     val allParagraphSpans = mutableListOf<ParagraphSpan>()
     val allCharacterSpans = mutableListOf<CharacterSpan>()
     val allLinkSpans = mutableListOf<LinkSpan>()
 
-    forEach { paragraph ->
-        allParagraphSpans.addAll(paragraph.toParagraphSpans(textBuffer.length))
-
-        val (paragraphText, styles, links) = paragraph.content
-        val linkSpans = links.map { it.toLinkSpan(textBuffer.length) }
-        allLinkSpans.addAll(linkSpans)
-
-        val characterSpans = styles.map { it.toCharacterSpan(textBuffer.length) }
-        allCharacterSpans.addAll(characterSpans)
-
-        textBuffer.append(paragraphText).append(paragraphDelimiter)
+    for (paragraph in this) {
+        allParagraphSpans.add(paragraph.toParagraphSpan(textBuffer.length))
+        allLinkSpans.addAll(paragraph.content.toLinkSpans(textBuffer.length))
+        allCharacterSpans.addAll(paragraph.content.toCharacterSpans(textBuffer.length))
+        textBuffer.append(paragraph.content.string).append("\n")
     }
 
-    return StyledText(
-        textBuffer.toString(),
-        allParagraphSpans,
-        allCharacterSpans,
-        allLinkSpans
-    )
+    return StyledText(textBuffer.toString(), allParagraphSpans, allCharacterSpans, allLinkSpans)
 }
 
-private fun Paragraph.toParagraphSpans(offset: Int): List<ParagraphSpan> {
-    val outerIndent = toOuterIndentSpan(offset)
-    val styles = toStyleSpans(offset)
-    val innerIndent = toInnerIndentSpan(offset)
-    return listOfNotNull(outerIndent) + styles + listOfNotNull(innerIndent)
-}
-
-private fun Paragraph.toStyleSpans(offset: Int): List<ParagraphSpan.Style> {
-    val appearanceList = when (style) {
-        ParagraphStyle.NORMAL -> emptyList()
-        ParagraphStyle.QUOTE -> listOf(ParagraphAppearance.QUOTE)
-        ParagraphStyle.FOOTNOTE -> listOf(ParagraphAppearance.FOOTNOTE)
-        ParagraphStyle.FOOTNOTE_QUOTE -> listOf(ParagraphAppearance.FOOTNOTE, ParagraphAppearance.QUOTE)
+private fun Paragraph.toParagraphSpan(offset: Int): ParagraphSpan {
+    val appearance = when (style) {
+        ParagraphStyle.NORMAL -> ParagraphAppearance.NORMAL
+        ParagraphStyle.QUOTE -> ParagraphAppearance.QUOTE
+        ParagraphStyle.FOOTNOTE -> ParagraphAppearance.FOOTNOTE
+        ParagraphStyle.FOOTNOTE_QUOTE -> ParagraphAppearance.FOOTNOTE_QUOTE
     }
-    return appearanceList.map { appearance ->
-        ParagraphSpan.Style(offset, offset + content.string.length, appearance)
-    }
-}
-
-private fun Paragraph.toOuterIndentSpan(offset: Int): ParagraphSpan.Indent? {
-    return when {
-        outerIndentLevel > 0 -> ParagraphSpan.Indent(
-            offset,
-            offset + content.string.length,
-            outerIndentLevel,
-            ""
-        )
-        else -> null
-    }
-}
-
-private fun Paragraph.toInnerIndentSpan(offset: Int): ParagraphSpan.Indent? {
-    return when {
-        innerIndentLevel > 0 || hangingText.isNotEmpty() -> ParagraphSpan.Indent(
-            offset,
-            offset + content.string.length,
-            innerIndentLevel,
-            hangingText
-        )
-        else -> null
-    }
+    val indent = Indent(outerIndentLevel, innerIndentLevel, hangingText)
+    return ParagraphSpan(offset, offset + content.string.length + 1, appearance, indent)
 }
