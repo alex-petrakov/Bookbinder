@@ -1,29 +1,30 @@
 package me.alex.pet.bookbinder.data
 
+import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
 import com.squareup.moshi.Moshi
 import me.alex.pet.bookbinder.domain.*
 
 @JsonClass(generateAdapter = true)
 data class MarkupDto(
-    val paragraphSpans: List<ParagraphSpanDto>,
-    val characterSpans: List<CharacterSpanDto>,
-    val linkSpans: List<LinkSpanDto>
+    @Json(name = "ps") val paragraphSpans: List<ParagraphSpanDto>,
+    @Json(name = "cs") val characterSpans: List<CharacterSpanDto>,
+    @Json(name = "ls") val linkSpans: List<LinkSpanDto>
 )
 
 @JsonClass(generateAdapter = true)
 data class ParagraphSpanDto(
-    val start: Int,
-    val end: Int,
-    val appearance: ParagraphAppearanceDto,
-    val indent: IndentDto
+    @Json(name = "s") val start: Int,
+    @Json(name = "e") val end: Int,
+    @Json(name = "a") val appearance: ParagraphAppearanceDto,
+    @Json(name = "i") val indent: IndentDto
 )
 
 @JsonClass(generateAdapter = true)
 data class IndentDto(
-    val outer: Int,
-    val inner: Int,
-    val hangingText: String
+    @Json(name = "o") val outer: Int,
+    @Json(name = "i") val inner: Int,
+    @Json(name = "ht") val hangingText: String
 )
 
 enum class ParagraphAppearanceDto {
@@ -35,9 +36,9 @@ enum class ParagraphAppearanceDto {
 
 @JsonClass(generateAdapter = true)
 data class CharacterSpanDto(
-    val start: Int,
-    val end: Int,
-    val appearance: CharacterAppearanceDto
+    @Json(name = "s") val start: Int,
+    @Json(name = "e") val end: Int,
+    @Json(name = "a") val appearance: CharacterAppearanceDto
 )
 
 enum class CharacterAppearanceDto {
@@ -48,9 +49,9 @@ enum class CharacterAppearanceDto {
 
 @JsonClass(generateAdapter = true)
 data class LinkSpanDto(
-    val start: Int,
-    val end: Int,
-    val ruleId: Int
+    @Json(name = "s") val start: Int,
+    @Json(name = "e") val end: Int,
+    @Json(name = "ri") val ruleId: Int
 )
 
 
