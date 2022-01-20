@@ -7,23 +7,20 @@ import me.alex.pet.bookbinder.data.BookDataStore
 import me.alex.pet.bookbinder.data.RulesDatabase
 import java.io.BufferedReader
 import java.io.File
+import javax.xml.stream.XMLEventReader
 import javax.xml.stream.XMLInputFactory
+import javax.xml.stream.XMLStreamException
 
-class BindBook(private val moshi: Moshi = Moshi.Builder().build()) {
+class BindBook(private val moshi: Moshi, private val xmlInputFactory: XMLInputFactory) {
 
     operator fun invoke(inputFile: File, outputFile: File, databaseVersion: Long) {
-        try {
-            require(inputFile.isFile && inputFile.canRead())
-            require(!outputFile.exists())
-            require(databaseVersion > 0L)
-        } catch (e: SecurityException) {
-            throw BindBookException("Access to the input or output file is denied", e)
-        }
+        require(inputFile.isFile) { "File at ${inputFile.absolutePath} is not a plain file" }
+        require(!outputFile.exists()) { "File at ${outputFile.absolutePath} already exists, specify another output path" }
+        require(databaseVersion > 0L) { "Illegal database version ($databaseVersion)" }
 
-        try {
-            outputFile.parentFile?.mkdirs()
-        } catch (e: SecurityException) {
-            throw BindBookException("Can't create parent directories for the output file", e)
+        val outputFileParent = outputFile.parentFile
+        if (outputFileParent != null && !outputFileParent.exists() && !outputFileParent.mkdirs()) {
+            throw BindBookException("Failed to create parent directories for ${outputFile.absolutePath}")
         }
 
         val book = inputFile.bufferedReader().use { parseBookFrom(it) }
@@ -35,15 +32,26 @@ class BindBook(private val moshi: Moshi = Moshi.Builder().build()) {
         }
     }
 
+    private fun require(value: Boolean, messageBuilder: () -> String) {
+        if (!value) throw BindBookException(messageBuilder())
+    }
+
     private fun parseBookFrom(bufferedReader: BufferedReader): Book {
-        val xmlReader = XMLInputFactory.newInstance()
-            .createXMLEventReader(bufferedReader)
+        val xmlReader = createXmlEventReader(bufferedReader)
         return try {
             xmlReader.parseBook()
         } catch (e: UnexpectedXmlException) {
             throw BindBookException("Unable to process the input file", e)
         } finally {
             xmlReader.close()
+        }
+    }
+
+    private fun createXmlEventReader(bufferedReader: BufferedReader): XMLEventReader {
+        return try {
+            xmlInputFactory.createXMLEventReader(bufferedReader)
+        } catch (e: XMLStreamException) {
+            throw BindBookException("Unable to create an XML reader", e)
         }
     }
 
